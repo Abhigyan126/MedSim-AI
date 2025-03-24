@@ -15,7 +15,9 @@ Medical students lack hands-on, interactive diagnostic experience in early train
 ## frontend
 
 ``` bash
-cd front/medsim-ai-front/
+git clone https://github.com/Abhigyan126/MedSim-AI.git
+cd MedSim-AI
+cd src/front/medsim-ai-front/
 npm start
 ```
 
