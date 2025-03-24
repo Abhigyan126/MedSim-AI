@@ -1,0 +1,42 @@
+.blob {
+ 
+  object-fit: cover;
+  
+  /* Thick border */
+  border: 4px solid grey;
+  
+  /* Start with circle */
+  border-radius: 50%;
+  
+  /* Moderate animation */
+  animation-name: blobby;
+  animation-duration: 7s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+  
+  /* Keep the blend mode */
+  mix-blend-mode: luminosity;
+}
+
+/* More moderate, subtle border transformations without rotation */
+@keyframes blobby {
+  0% {
+    border-radius: 50%;
+  }
+  20% {
+    border-radius: 45% 55% 45% 55% / 53% 51% 49% 47%;
+  }
+  40% {
+    border-radius: 43% 57% 41% 59% / 53% 52% 48% 47%;
+  }
+  60% {
+    border-radius: 46% 54% 45% 55% / 50% 55% 45% 50%;
+  }
+  80% {
+    border-radius: 48% 52% 41% 59% / 48% 58% 42% 52%;
+  }
+  100% {
+    border-radius: 54% 46% 60% 40% / 43% 55% 45% 57%;
+  }
+}
