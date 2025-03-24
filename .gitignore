@@ -15,11 +15,6 @@ build/
 .svelte-kit/
 .eslintcache
 
-# Tailwind CSS
-*.css.map
-postcss.config.js
-tailwind.config.js
-
 # React and frontend build artifacts
 public/*.map
 public/build/
