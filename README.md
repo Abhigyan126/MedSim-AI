@@ -9,3 +9,18 @@ Medical students lack hands-on, interactive diagnostic experience in early train
 * API for integrating real medical cases into virtual training<br>
 
 💻 Tech Stack: <i>(Will be added after discussion)</i>
+
+# how to run 
+
+## frontend
+
+``` bash
+cd front/medsim-ai-front/
+npm start
+```
+
+## backend
+
+``` bash
+// yet to decide
+```
