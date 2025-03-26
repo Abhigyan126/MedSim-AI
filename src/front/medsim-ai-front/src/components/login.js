@@ -66,6 +66,19 @@ function LoginForm() {
     }
   };
 
+  function OnSubmit() {
+    const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
+    const errorMessages = Object.keys(errors).filter((field) => errors[field]);
+  
+    if (emptyFields.length > 0) {
+      alert(`Please fill in: ${emptyFields.join(", ")}`);
+    } else if (errorMessages.length > 0) {
+      alert(`Invalid input in: ${errorMessages.join(", ")}`);
+    } else {
+      alert("Everything is OK");
+    }
+  }  
+
   return (
     <div className="w-1/2 flex justify-center items-center">
       <div className="flex flex-col items-center space-y-4 w-80">
@@ -84,9 +97,12 @@ function LoginForm() {
             )}
           </div>
         ))}
-        <button className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white">
-          Submit
-        </button>
+        <button
+  className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white"
+  onClick={OnSubmit}>
+  Submit
+</button>
+
       </div>
     </div>
   );
@@ -150,6 +166,19 @@ function SignupForm() {
     }
   };
 
+  function SubmitSignup() {
+    const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
+    const errorMessages = Object.keys(errors).filter((field) => errors[field]);
+  
+    if (emptyFields.length > 0) {
+      alert(`Please fill in: ${emptyFields.join(", ")}`);
+    } else if (errorMessages.length > 0) {
+      alert(`Invalid input in: ${errorMessages.join(", ")}`);
+    } else {
+      alert("Everything is OK");
+    }
+  }  
+  
   return (
     <div className="w-1/2 flex justify-center items-center">
       <div className="flex flex-col items-center space-y-4 w-80">
@@ -168,9 +197,10 @@ function SignupForm() {
             )}
           </div>
         ))}
-        <button className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white">
+        <button className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white" onClick={SubmitSignup}>
           Sign Up
         </button>
+
       </div>
     </div>
   );
