@@ -157,8 +157,8 @@ function SignupForm() {
         {["username", "email", "password", "confirmPassword"].map((field) => (
           <div key={field} className="w-full">
             <input
-              type={field.includes("password") ? "password" : "text"}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              type={field.toLowerCase().includes("password") ? "password" : "text"}
+              placeholder={field.toLowerCase().includes("confirmpassword") ? "Confirm Password" : field.charAt(0).toUpperCase() + field.slice(1)}
               className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none"
               value={formData[field]}
               onChange={(e) => handleInputChange(field, e.target.value)}
