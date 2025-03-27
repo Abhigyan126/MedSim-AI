@@ -13,10 +13,12 @@ Medical students lack hands-on, interactive diagnostic experience in early train
 - Flask
 - React
 - JWT
+- mongoDB
+- Bcrypt
 
-# how to run 
+## how to run 
 
-## frontend
+### frontend
 
 ``` bash
 git clone https://github.com/Abhigyan126/MedSim-AI.git
@@ -25,7 +27,7 @@ cd src/front/medsim-ai-front/
 npm start
 ```
 
-## backend
+### backend
 
 create .env in src/back/ and fill in the following credentials
 ```bash
@@ -40,7 +42,7 @@ pip install -r requirements.txt
 python src/back/main.py
 ```
 
-## setup Vurtual environment
+### setup Vurtual environment
 
 ```bash
 # outside the Working directory
