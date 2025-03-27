@@ -8,7 +8,11 @@ Medical students lack hands-on, interactive diagnostic experience in early train
 * AI-generated diagnostic decision tree training
 * API for integrating real medical cases into virtual training<br>
 
-💻 Tech Stack: <i>(Will be added after discussion)</i>
+💻 Tech Stack: 
+
+- Flask
+- React
+- JWT
 
 # how to run 
 
