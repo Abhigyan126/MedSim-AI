@@ -23,6 +23,25 @@ npm start
 
 ## backend
 
+create .env in src/back/ and fill in the following credentials
+```bash
+mongo  = 'API key for mongodb'
+secret = 'Secret key for JWR'
+```
+note: donot push the key in github, the .env in .gitignore will handle this automatically
+
 ``` bash
-// yet to decide
+cd MedSim-AI
+pip install requirements.txt
+python src/back/main.py
+```
+
+## setup Vurtual environment
+
+```bash
+# outside the Working directory
+cd ..
+# to go back a directory
+python -m venv 'name of environment'
+source 'name of environment'/bin/activates
 ```

@@ -1,5 +1,7 @@
 import "../styles/blob.css";
 import { useState } from "react";
+import API from "./api";
+import Dashboard from "./auth_check";
 
 
 /* Creates a vertical divider at the center of the page */
@@ -53,7 +55,7 @@ function LoginForm() {
       message: "Minimum 8 characters long with uppercase, lowercase, number & special character.",
     },
   };
-
+  // function to handle change in login form
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -65,8 +67,8 @@ function LoginForm() {
       }));
     }
   };
-
-  function OnSubmit() {
+  // async function to validate and send login form content to backend
+  async function OnSubmitLogin() {
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
   
@@ -75,7 +77,15 @@ function LoginForm() {
     } else if (errorMessages.length > 0) {
       alert(`Invalid input in: ${errorMessages.join(", ")}`);
     } else {
-      alert("Everything is OK");
+      try {
+        const response = await API.post("/login", JSON.stringify(formData));
+        console.log('Login Response Headers:', response.headers);
+        console.log('Response Cookies:', document.cookie);    
+        alert(response.data.message);
+        Dashboard();
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
     }
   }  
 
@@ -99,7 +109,7 @@ function LoginForm() {
         ))}
         <button
   className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white"
-  onClick={OnSubmit}>
+  onClick={OnSubmitLogin}>
   Submit
 </button>
 
@@ -109,7 +119,7 @@ function LoginForm() {
 }
 
 /* Creates a Signup form */
-function SignupForm() {
+function SignupForm({setActiveForm}) {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -146,7 +156,7 @@ function SignupForm() {
       message: "Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
     },
   };
-
+  // function to handle change in submit form
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -166,7 +176,8 @@ function SignupForm() {
     }
   };
 
-  function SubmitSignup() {
+  // async function to validate and send the Signup form contents to backend 
+  async function OnSubmitSignup() {
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
   
@@ -175,9 +186,18 @@ function SignupForm() {
     } else if (errorMessages.length > 0) {
       alert(`Invalid input in: ${errorMessages.join(", ")}`);
     } else {
-      alert("Everything is OK");
+      try {
+        const { confirmPassword, ...dataToSend } = formData;
+        const response = await API.post("/signup", JSON.stringify(dataToSend));
+  
+        alert(`Signup successful: ${response.data.message}`);
+        setActiveForm("login");
+  
+      } catch (error) {
+        alert(`Signup failed: ${error.response?.data?.message || error.message}`);
+      }
     }
-  }  
+  }
   
   return (
     <div className="w-1/2 flex justify-center items-center">
@@ -197,7 +217,7 @@ function SignupForm() {
             )}
           </div>
         ))}
-        <button className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white" onClick={SubmitSignup}>
+        <button onClick={OnSubmitSignup} className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white">
           Sign Up
         </button>
 
@@ -215,16 +235,17 @@ function ShowLogo() {
   );
 }
 
+/* Main Login exported function - call it to render login page and its functionality */
 const Login = () => {
-  const [activeForm, setActiveForm] = useState("logo"); // "login", "signup", or "logo"
+  const [activeForm, setActiveForm] = useState("logo");         // states: ["login", "signup", "logo"]
 
   let contentLeft;
   if (activeForm === "login") {
-    contentLeft = <LoginForm />;
+    contentLeft = <LoginForm />;                                // renders login form
   } else if (activeForm === "signup") {
-    contentLeft = <SignupForm />;
+    contentLeft = <SignupForm setActiveForm={setActiveForm}/>;  // renders signup form
   } else {
-    contentLeft = <ShowLogo />;
+    contentLeft = <ShowLogo />;                                 // renders logo
   }
 
   return (
