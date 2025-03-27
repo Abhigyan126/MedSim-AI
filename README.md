@@ -32,7 +32,7 @@ note: donot push the key in github, the .env in .gitignore will handle this auto
 
 ``` bash
 cd MedSim-AI
-pip install requirements.txt
+pip install -r requirements.txt
 python src/back/main.py
 ```
 
@@ -43,5 +43,10 @@ python src/back/main.py
 cd ..
 # to go back a directory
 python -m venv 'name of environment'
-source 'name of environment'/bin/activates
+# for Linux or mac os
+source 'name of environment'/bin/activate
+# for windows os
+'name of environment'\Scripts\activate.bat
+# or
+. 'name of environment'\Scripts\activate
 ```
