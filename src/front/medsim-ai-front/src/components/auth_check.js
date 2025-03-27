@@ -1,18 +1,15 @@
+import { useState, useEffect } from "react";
 import API from "./api";
+const useAuthCheck = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
-// A test function to test the authentication
-const Dashboard = () => {
+  useEffect(() => {
     API.get("/auth-check", { withCredentials: true })
-      .then((response) => {
-        console.log("Full response:", response);
-        alert("Authenticated ✅");
-      })
-      .catch((error) => {
-        console.error("Authentication Error:", error.response);
-        alert(`Not Authenticated ❌: ${error.response?.data?.message || error.message}`);
-      });
-  
-    return null;
-  };
+      .then(() => setIsAuthenticated(true))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
-export default Dashboard;
+  return isAuthenticated;
+};
+
+export default useAuthCheck;

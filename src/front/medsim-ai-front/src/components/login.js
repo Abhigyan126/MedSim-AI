@@ -1,7 +1,7 @@
 import "../styles/blob.css";
 import { useState } from "react";
 import API from "./api";
-import Dashboard from "./auth_check";
+import { useNavigate } from "react-router-dom";
 
 
 /* Creates a vertical divider at the center of the page */
@@ -30,6 +30,7 @@ function LoginButton({ setActiveForm }) {
 
 /* Creates a Login form  */
 function LoginForm() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -79,10 +80,11 @@ function LoginForm() {
     } else {
       try {
         const response = await API.post("/login", JSON.stringify(formData));
-        console.log('Login Response Headers:', response.headers);
-        console.log('Response Cookies:', document.cookie);    
-        alert(response.data.message);
-        Dashboard();
+        if (response.status === 200) {
+          navigate('/home')
+        } else {
+          alert("Login failed! Please check your credentials.", response);
+        }
       } catch (error) {
         alert(`Error: ${error.message}`);
       }

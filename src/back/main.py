@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager, verify_jwt_in_request
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, JWTManager, unset_jwt_cookies, decode_token
 from datetime import timedelta
+from bson import ObjectId
 from dotenv import load_dotenv
 import os
 
@@ -37,6 +38,21 @@ app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token"                   # Change
 
 
 jwt = JWTManager(app)
+
+# Helper Functions
+def get_username_from_jwt():
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        return jsonify({"message": "Missing token"}), 401
+    try:
+        decoded_token = decode_token(access_token)
+        user_id = decoded_token["sub"]
+        user = users.find_one({"_id": ObjectId(user_id)}, {"username": 1, "_id": 0})
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        return jsonify({"username": user["username"]}), 200
+    except Exception as e:
+        return jsonify({"message": "Invalid token", "error": str(e)}), 401
 
 # Signup Route
 @app.route("/signup", methods=["POST"])
@@ -76,12 +92,25 @@ def login():
     response.set_cookie("access_token", access_token, httponly=True, secure=False, samesite='Lax',path='/')  # Store JWT in HttpOnly cookie
     return response
 
+# Logout Route
+@app.route("/logout", methods=["POST"])
+def logout():
+    response = jsonify({"message": "Logout successful"})
+    unset_jwt_cookies(response)  # This clears the JWT token stored in cookies
+    return response
 
 # Check Authentication Route
 @app.route("/auth-check", methods=["GET"])
 @jwt_required()
 def auth_check():
     return jsonify({"message": "Authenticated", "user_id": get_jwt_identity()}), 200
+
+#retuen the username for a given cookie token
+@app.route("/getusername", methods=["GET"])
+@jwt_required()
+def getusername():
+    return get_username_from_jwt()
+
 
 if __name__ == "__main__":
     app.run(debug=True)
