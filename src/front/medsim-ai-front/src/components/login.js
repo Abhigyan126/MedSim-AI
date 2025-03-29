@@ -28,6 +28,8 @@ function LoginButton({ setActiveForm }) {
 
 /* Login Form Component */
 function LoginForm() {
+  const [isemailError, setisemailError] = useState(false);
+  const [ispasswordError, setispasswordError] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -71,6 +73,8 @@ function LoginForm() {
   };
 
   async function OnSubmitLogin() {
+    setisemailError(false);
+    setispasswordError(false);
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
   
@@ -83,11 +87,23 @@ function LoginForm() {
         const response = await API.post("/login", JSON.stringify(formData));
         if (response.status === 200) {
           navigate('/home');
-        } else {
-          alert("Login failed! Please check your credentials.", response);
-        }
+        } 
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        if (error.response) {
+          if (error.response.status === 401) {
+            alert(`Error:Incorrect credentials! \n${JSON.stringify(error.response.data.message)} Please try again.`);
+            if (error.response.data.cust_error === 40101) {
+              setisemailError(true);
+
+            } else if(error.response.data.cust_error === 40102) {
+              setispasswordError(true);
+            }
+          } else {
+            alert(`Login failed! Server responded with status: ${error.response.status}`);
+          }
+        } else {
+          alert(`Error: ${error.message}`);
+        }
       }
     }
   }
@@ -100,7 +116,7 @@ function LoginForm() {
           <input
             type="text"
             placeholder="Email"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none"
+            className= {`w-full h-12 px-4 border-2 ${isemailError ? 'border-red-400':'border-black'} rounded-full text-xl focus:outline-none`}
             value={formData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
           />
@@ -112,7 +128,7 @@ function LoginForm() {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
+            className={`w-full h-12 px-4 border-2 ${ispasswordError ? 'border-red-400' : 'border-black'} rounded-full text-xl focus:outline-none pr-10`}
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
           />
