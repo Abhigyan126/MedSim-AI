@@ -3,28 +3,6 @@ import { useState } from "react";
 import API from "./api";
 import { useNavigate } from "react-router-dom";
 
-/* Eye Icon Component for Password Toggle */
-const EyeIcon = ({ showPassword, toggleShowPassword }) => {
-  return (
-    <button
-      type="button"
-      onClick={toggleShowPassword}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 focus:outline-none"
-    >
-      {showPassword ? (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
-      ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-        </svg>
-      )}
-    </button>
-  );
-};
-
 /* Vertical Divider Component */
 function VerticalDivider() {
   return (
@@ -88,6 +66,10 @@ function LoginForm() {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   async function OnSubmitLogin() {
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
@@ -108,7 +90,7 @@ function LoginForm() {
         alert(`Error: ${error.message}`);
       }
     }
-  }  
+  }
 
   return (
     <div className="w-1/2 flex justify-center items-center">
@@ -130,14 +112,18 @@ function LoginForm() {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none"
+            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
           />
-          <EyeIcon 
-            showPassword={showPassword} 
-            toggleShowPassword={() => setShowPassword(!showPassword)} 
-          />
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute right-3 top-3 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            <div className={`w-3 h-3 rounded-full ${showPassword ? "bg-transparent border border-black" : "bg-black"}`}></div>
+          </button>
           {touched.password && errors.password && (
             <p className="text-red-500 text-sm mt-1 font-bold text-center">{errors.password}</p>
           )}
@@ -173,8 +159,10 @@ function SignupForm({ setActiveForm }) {
     password: false,
     confirmPassword: false,
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    password: false,
+    confirmPassword: false,
+  });
 
   const validationRules = {
     username: {
@@ -208,6 +196,13 @@ function SignupForm({ setActiveForm }) {
         confirmPassword: value === formData.password ? "" : "Passwords do not match",
       }));
     }
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPassword(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   async function OnSubmitSignup() {
@@ -260,32 +255,40 @@ function SignupForm({ setActiveForm }) {
         </div>
         <div className="w-full relative">
           <input
-            type={showPassword ? "text" : "password"}
+            type={showPassword.password ? "text" : "password"}
             placeholder="Password"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none"
+            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
           />
-          <EyeIcon 
-            showPassword={showPassword} 
-            toggleShowPassword={() => setShowPassword(!showPassword)} 
-          />
+          <button
+            type="button"
+            onClick={() => togglePasswordVisibility("password")}
+            className="absolute right-3 top-3 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center"
+            aria-label={showPassword.password ? "Hide password" : "Show password"}
+          >
+            <div className={`w-3 h-3 rounded-full ${showPassword.password ? "bg-transparent border border-black" : "bg-black"}`}></div>
+          </button>
           {touched.password && errors.password && (
             <p className="text-red-500 text-sm mt-1 font-bold text-center">{errors.password}</p>
           )}
         </div>
         <div className="w-full relative">
           <input
-            type={showConfirmPassword ? "text" : "password"}
+            type={showPassword.confirmPassword ? "text" : "password"}
             placeholder="Confirm Password"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none"
+            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
             value={formData.confirmPassword}
             onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
           />
-          <EyeIcon 
-            showPassword={showConfirmPassword} 
-            toggleShowPassword={() => setShowConfirmPassword(!showConfirmPassword)} 
-          />
+          <button
+            type="button"
+            onClick={() => togglePasswordVisibility("confirmPassword")}
+            className="absolute right-3 top-3 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center"
+            aria-label={showPassword.confirmPassword ? "Hide password" : "Show password"}
+          >
+            <div className={`w-3 h-3 rounded-full ${showPassword.confirmPassword ? "bg-transparent border border-black" : "bg-black"}`}></div>
+          </button>
           {touched.confirmPassword && errors.confirmPassword && (
             <p className="text-red-500 text-sm mt-1 font-bold text-center">{errors.confirmPassword}</p>
           )}
