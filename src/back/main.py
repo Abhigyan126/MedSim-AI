@@ -84,8 +84,10 @@ def login():
     data = request.json
     user = users.find_one({"email": data["email"]})
 
-    if not user or not bcrypt.check_password_hash(user["password"], data["password"]):
-        return jsonify({"message": "Invalid credentials"}), 401
+    if not user:
+        return jsonify({"message": "Invalid Email", "cust_error": 40101}), 401
+    if not bcrypt.check_password_hash(user["password"], data["password"]):
+        return jsonify({"message": "Invalid Password", "cust_error": 40102}), 401
 
     access_token = create_access_token(identity=str(user["_id"]))       # Create JWT
     response = make_response(jsonify({"message": "Login successful"}))
