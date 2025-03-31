@@ -6,7 +6,11 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_requir
 from datetime import timedelta
 from bson import ObjectId
 from dotenv import load_dotenv
+from chatbot.inference import IntentClassifier
 import os
+
+#load Intentclassifier
+intent_classifier = IntentClassifier()
 
 #loading variables from .env
 load_dotenv()
@@ -112,6 +116,19 @@ def auth_check():
 @jwt_required()
 def getusername():
     return get_username_from_jwt()
+
+
+@jwt_required()
+@app.route("/intent", methods=["POST"])
+def get_intent_from_message():
+    data = request.get_json()                                   # Use get_json() to avoid errors
+    if "message" not in data:
+        return {"error": "Missing 'message' field"}, 400        # Handle missing data
+    print(data)
+    to_predict = str(data['message'])
+    prediction = intent_classifier.get_intent(to_predict)       # Use instance method
+    print(prediction)
+    return {"intent": f'{prediction}'}                          # Return response as JSON
 
 
 if __name__ == "__main__":

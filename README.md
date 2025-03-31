@@ -34,13 +34,15 @@ create .env in src/back/ and fill in the following credentials
 mongo  = 'API key for mongodb'
 secret = 'Secret key for JWR'
 ```
-note: donot push the key in github, the .env in .gitignore will handle this automatically
+<i>note: donot push the key in github, the .env in .gitignore will handle this automatically</i>
 
 ``` bash
 cd MedSim-AI
 pip install -r requirements.txt
-python src/back/main.py
+cd src/black
+python main.py
 ```
+<i>note: if there is any error related to file not found kindly follow the above instructions</i>
 
 ### setup Vurtual environment
 
