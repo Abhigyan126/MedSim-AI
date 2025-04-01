@@ -50,7 +50,7 @@ const Chatbot = ({ showChat, setShowChat }) => {
     function handle_ai_navigation(route, opt1, opt2,nav) {
         ai_send(<div className="p-2">
             <p className="text-lg font-semibold">Navigating to {route}</p>
-            <div className="mt-1 flex gap-2">
+            <div className="mt-1 flex gap-2 items-center justify-center">
               <button className="px-3 py-1 rounded-full border border-white bg-black text-white opacity-30 hover:opacity-100 transition" onClick={() => navigate(`/${nav}`)}>
                 {opt1}
               </button>

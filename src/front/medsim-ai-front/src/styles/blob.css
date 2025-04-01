@@ -73,3 +73,32 @@
       transform: translate(-50%, -50%) rotate(0deg);
     }
   }
+
+  .burger-icon {
+    display: inline-block;
+    cursor: pointer;
+    width: 24px; /* Adjust as needed */
+    height: 24px; /* Adjust as needed */
+    position: relative;
+  }
+  
+  .bar1, .bar2, .bar3 {
+    width: 100%;
+    height: 4px;
+    background-color: #ffffff; /* Color of the bars */
+    margin: 4px 0;
+    transition: 0.4s;
+  }
+  
+  /* Optional: Animation for when the icon is clicked (e.g., to an "X") */
+  .burger-icon.change .bar1 {
+    -webkit-transform: rotate(-45deg) translate(-9px, 6px);
+    transform: rotate(-45deg) translate(-9px, 6px);
+  }
+  
+  .burger-icon.change .bar2 {opacity: 0;}
+  
+  .burger-icon.change .bar3 {
+    -webkit-transform: rotate(45deg) translate(-8px, -8px);
+    transform: rotate(45deg) translate(-8px, -8px);
+  }
