@@ -5,9 +5,15 @@ import API from "./api";
 import "../styles/blob.css";
 import Chatbot from "./chatbot";
 
+function Nav() {
+    return({
+        
+    });
+}
 
 const Home = () => {
     const [showChat, setShowChat] = useState(false);
+    const [showNavbar, setShowNavbar] = useState(false);
     const navigate = useNavigate();
     const isAuthenticated = useAuthCheck();
     const [username, setUsername] = useState("");
@@ -33,14 +39,19 @@ const Home = () => {
         return <h1>Loading...</h1>; // Show loading state while checking auth
     }
 
+    const handleNavbarClick = () => {
+        setShowNavbar((prevShowNavbar) => !prevShowNavbar); // Toggle showNavbar
+      };
+
     return (
         <div className="relative">
             <h1>Welcome, {username}!</h1>
+            {showNavbar && <Nav />} {/* Conditionally render the <p> tag */}
 
             {/* Fixed Chatbot Button */}
             <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white py-2 shadow-md flex justify-between items-center">
             <div className="ml-4"> {/* Added left margin */}
-                <button>
+                <button onClick={handleNavbarClick}>
                 <div className="burger-icon">
                 <div className="bar1"></div>
                 <div className="bar2"></div>
