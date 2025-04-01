@@ -5,10 +5,39 @@ import API from "./api";
 import "../styles/blob.css";
 import Chatbot from "./chatbot";
 
+/* Navigatation Button Function */
 function Nav() {
-    return({
-        
-    });
+    return (
+        <div className="fixed left-0 top-0 h-[94%] w-[15vw] bg-blue-900 bg-opacity-80 backdrop-blur-md p-2 flex flex-col justify-between text-white">
+            {/* Top Section: User Info + Navigation Buttons */}
+            <div className="flex flex-col gap-4">
+                {/* User Info */}
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl font-semibold">Username</h2>
+                    <p className="text-lg">Name</p>
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex flex-col gap-4 mt-4">
+                    <button className="border-white bg-transparent text-lg hover:bg-white hover:text-black text-white px-2 py-2 outline-none">
+                        Profile
+                    </button>
+                    <button className="border-white bg-transparent text-lg hover:bg-white hover:text-black text-white px-2 py-2 outline-none">
+                        Home
+                    </button>
+                    <button className="border-white bg-transparent text-lg hover:bg-white hover:text-black text-white px-2 py-2 outline-none">
+                        About Us
+                    </button>
+                </div>
+            </div>
+
+            {/* Bottom Section: Logout Button */}
+            <button className="border-white bg-transparent text-lg hover:bg-black hover:text-white text-white px-2 py-2 outline-none">
+                Logout
+            </button>
+        </div>
+    );
+
 }
 
 const Home = () => {
