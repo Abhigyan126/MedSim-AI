@@ -15,6 +15,9 @@ Medical students lack hands-on, interactive diagnostic experience in early train
 - JWT
 - mongoDB
 - Bcrypt
+- Transformers
+- Pytorch
+- Sentence-Transformers
 
 ## how to run 
 
@@ -39,7 +42,7 @@ secret = 'Secret key for JWR'
 ``` bash
 cd MedSim-AI
 pip install -r requirements.txt
-cd src/black
+cd src/back
 python main.py
 ```
 <i>note: if there is any error related to file not found kindly follow the above instructions</i>
