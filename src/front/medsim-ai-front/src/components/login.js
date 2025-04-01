@@ -2,6 +2,8 @@ import "../styles/blob.css";
 import { useState } from "react";
 import API from "./api";
 import { useNavigate } from "react-router-dom";
+import Chatbot from "./chatbot";
+import Sidebar from "./sidebar";
 
 /* Vertical Divider Component */
 function VerticalDivider() {
@@ -331,7 +333,14 @@ function ShowLogo() {
 
 /* Main Login Component */
 const Login = () => {
+  const [showChat, setShowChat] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(false);
+  
   const [activeForm, setActiveForm] = useState("logo");
+
+  const handleNavbarClick = () => {
+    setShowNavbar((prevShowNavbar) => !prevShowNavbar); // Toggle showNavbar
+  };
 
   let contentLeft;
   if (activeForm === "login") {
@@ -354,6 +363,34 @@ const Login = () => {
       <div className="w-1/2 flex justify-center items-center">  
         <LoginButton setActiveForm={setActiveForm} />
       </div>
+
+      {showNavbar && <Sidebar/>} {/* Conditionally render the <p> tag */}
+
+      {/* Fixed Chatbot Button */}
+      <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white py-2 shadow-md flex justify-between items-center">
+      <div className="ml-4"> {/* Added left margin */}
+          <button onClick={handleNavbarClick}>
+          <div className="burger-icon">
+          <div className="bar1"></div>
+          <div className="bar2"></div>
+          <div className="bar3"></div>
+          </div>
+
+          </button>
+      </div>
+      <div className="mr-4"> {/* Added right margin */}
+          <button
+          className="px-6 border-2 border-white"
+          onClick={() => setShowChat(!showChat)}
+          >
+          Chat Bot
+          </button>
+      </div>
+      </div>
+
+      {/* Chatbot Popup */}
+      <Chatbot showChat={showChat} setShowChat={setShowChat}/>
+
     </div>
   );
 };

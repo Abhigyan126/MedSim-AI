@@ -95,6 +95,9 @@ const Chatbot = ({ showChat, setShowChat }) => {
             const response = await API.post("/intent", { message });
             handle_intent(response.data.intent);
         } catch (error) {
+            if (error.response.status == 401) {
+                ai_send('Please Login to comunicate')
+            }
             console.error("Error sending message:", error);
         }
         setMessage("");
@@ -108,7 +111,7 @@ const Chatbot = ({ showChat, setShowChat }) => {
     if (!showChat) return null;
 
     return (
-        <div className="fixed bottom-12 right-2 w-[450px] h-[500px] max-h-screen bg-black bg-opacity-40 text-white p-4 rounded-xl shadow-lg flex flex-col">
+        <div className="fixed bottom-12 right-2 w-[450px] h-[500px] max-h-screen bg-gray-900 bg-opacity-90 backdrop-blur-md text-white p-4 rounded-xl shadow-lg flex flex-col">
             {/* Header */}
             <div className="flex justify-between items-center py-2">
                 <div className="flex items-center space-x-2">
@@ -135,7 +138,7 @@ const Chatbot = ({ showChat, setShowChat }) => {
                             key={index} 
                             className={`max-w-[75%] px-2 py-1 my-1 rounded-lg break-words whitespace-pre-wrap text-sm ${
                                 msg.sender === "ai" 
-                                    ? "bg-black self-start ml-2 mr-auto text-left bg-opacity-30"
+                                    ? "bg-black self-start ml-2 mr-auto text-left bg-opacity-20 text-white"
                                     : "bg-white self-end mr-2 ml-auto text-right text-black"
                             }`}
                         > 

@@ -38,8 +38,8 @@ app.config["JWT_SECRET_KEY"] = secret
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]                          # Store JWT in HttpOnly cookies
 app.config["JWT_COOKIE_SECURE"] = False                                 # Set to True in production (HTTPS)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)              # 1 Day expiration of cookie
-app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token"                   # Change cookie name
-
+app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token"                 # Change cookie name
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # Enable CSRF protection for cookies
 
 jwt = JWTManager(app)
 
@@ -51,10 +51,10 @@ def get_username_from_jwt():
     try:
         decoded_token = decode_token(access_token)
         user_id = decoded_token["sub"]
-        user = users.find_one({"_id": ObjectId(user_id)}, {"username": 1, "_id": 0})
+        user = users.find_one({"_id": ObjectId(user_id)}, {"username": 1, "email": 1, "_id": 0})
         if not user:
             return jsonify({"message": "User not found"}), 404
-        return jsonify({"username": user["username"]}), 200
+        return jsonify({"username": user["username"], "email": user["email"]}), 200
     except Exception as e:
         return jsonify({"message": "Invalid token", "error": str(e)}), 401
 
@@ -117,14 +117,13 @@ def auth_check():
 def getusername():
     return get_username_from_jwt()
 
-
-@jwt_required()
 @app.route("/intent", methods=["POST"])
-def get_intent_from_message():
+@jwt_required()
+def get_intent():
+    print(request.headers)
     data = request.get_json()                                   # Use get_json() to avoid errors
     if "message" not in data:
         return {"error": "Missing 'message' field"}, 400        # Handle missing data
-    print(data)
     to_predict = str(data['message'])
     prediction = intent_classifier.get_intent(to_predict)       # Use instance method
     print(prediction)
