@@ -4,6 +4,8 @@ import Login from './components/login';
 import Homepage from './components/home';
 import Logout from './components/logout';
 import Profile from './components/profile';
+import Simulator from './components/symptom';
+
 function App() {
   return (
     <Router>
@@ -12,7 +14,8 @@ function App() {
         <Route path='/home' element={<Homepage />} />
         <Route path='/login' element={<Login />} />
         <Route path='/logout' element={<Logout />} />
-        <Route path='/Profile' element={<Profile />} />
+        <Route path='/profile' element={<Profile />} />
+        <Route path='/symptom-simulator' element={<Simulator />} />
         </Routes>
     </Router>
   );

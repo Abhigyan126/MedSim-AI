@@ -7,6 +7,7 @@ from datetime import timedelta
 from bson import ObjectId
 from dotenv import load_dotenv
 from chatbot.inference import IntentClassifier
+from identity_icon import IdentIcon
 import os
 
 #load Intentclassifier
@@ -129,6 +130,21 @@ def get_intent():
     print(prediction)
     return {"intent": f'{prediction}'}                          # Return response as JSON
 
+
+@app.route('/get_identicon', methods=['GET'])
+@jwt_required()
+def get_identicon():
+    """
+    Fetches the user's identicon using the authenticated JWT user ID.
+    """
+    try:
+        user_id = get_jwt_identity()                            # Extract user ID from JWT token
+        mongo_key = str(ObjectId(user_id))                      # Ensure it's in ObjectId format
+        svg_img = IdentIcon.generate_identicon_svg(mongo_key)
+
+        return jsonify({"svg": f"data:image/svg+xml;base64,{svg_img}"})
+    except Exception as e:
+        return jsonify({"message": "Invalid User ID", "error": str(e)}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)
