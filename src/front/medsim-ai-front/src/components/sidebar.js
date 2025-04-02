@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const Sidebar = ({ username="?" , name="?" }) => {
     const navigate = useNavigate();
     const navItems = [
-        { label: "Profile", icon: <User size={22} />, action: () => console.log("Profile clicked") },
+        { label: "Profile", icon: <User size={22} />, action: () => navigate('/profile') },
         { label: "Home", icon: <Home size={22} />, action: () => navigate('/home') },
         { label: "Login", icon: <LogIn size={22} />, action: () => navigate('/login') },
         { label: "About Us", icon: <Info size={20} />, action: () => console.log("About clicked") },
