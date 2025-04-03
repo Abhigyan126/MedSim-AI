@@ -8,6 +8,48 @@ import Sidebar from "./sidebar";
 
 
 
+const partsData = [
+    { name: "Head", condition: "Normal", x: 13, y: 10, lineStartX: 135, lineStartY: 13 },
+    { name: "Heart", condition: "Critical", x: 90, y: 100, lineStartX: 110, lineStartY: 130 },
+    { name: "Liver", condition: "Warning", x: 120, y: 150, lineStartX: 140, lineStartY: 180 }
+];
+
+const getColor = (condition) => {
+    switch (condition) {
+        case "Normal": return "bg-green-500";
+        case "Warning": return "bg-yellow-500";
+        case "Critical": return "bg-red-500";
+        default: return "bg-gray-500";
+    }
+};
+
+function Setupdiagram() {
+    return (
+        <div className="relative w-[300px] h-[400px]">
+            {/* Background SVG */}
+            <img src="images/body_diagram.svg" alt="Diagram" className="w-full h-full" />
+
+            {/* SVG for Lines */}
+            <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                {partsData.map((part, index) => (
+                    <line key={index}
+                          x1={part.lineStartX} y1={part.lineStartY} 
+                          x2={part.x + 10} y2={part.y + 10}
+                          stroke="black" strokeWidth="2" />
+                ))}
+            </svg>
+
+            {/* Dynamic Labels */}
+            {partsData.map((part, index) => (
+                <div key={index} 
+                     className={`absolute ${getColor(part.condition)} text-white text-xs font-bold px-2 py-1 rounded`}
+                     style={{ top: part.y, left: part.x }}>
+                    {part.name}
+                </div>
+            ))}
+        </div>
+    );
+}
 
 //Simulator code below 
 
@@ -46,6 +88,7 @@ const Simulator = () => {
     return (
         <div className="relative">
             {/* Website content */}
+            <Setupdiagram />
             <h1>This is your symptom Simulator</h1>
             
 
