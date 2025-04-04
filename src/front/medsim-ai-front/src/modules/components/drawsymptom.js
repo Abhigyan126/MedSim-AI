@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import "../styles/blob.css";
+import "../../styles/blob.css";
+import { Heart, Info, MessageSquare, Send, Eye } from 'lucide-react';
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -48,6 +49,7 @@ const NO_SPAWN_ZONE_PUSH_MARGIN = 15; // How far to push away from the zone edge
 
 
 function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
+  const [activeButton, setActiveButton] = useState(null);
   const canvasRef = useRef(null);
   const containerRef = useRef(null); // Ref for the main container for potential future use
   const leftColRef = useRef(null); // Ref for the left column containing canvas
@@ -157,11 +159,9 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
           if (boxCenterX < ORIGINAL_WIDTH / 2) {
               // Box center is left of canvas center, push left out of zone
               adjustedPosX = NO_SPAWN_ZONE_LEFT - BOX_WIDTH - NO_SPAWN_ZONE_PUSH_MARGIN - Math.floor(Math.random() * 50) - 5;
-              //console.log(`Box ${index} pushed LEFT from no-spawn zone`);
           } else {
               // Box center is right of canvas center, push right out of zone
               adjustedPosX = NO_SPAWN_ZONE_RIGHT + NO_SPAWN_ZONE_PUSH_MARGIN + Math.floor(Math.random() * 50) + 5;
-              //console.log(`Box ${index} pushed RIGHT from no-spawn zone`);
           }
       }
       // --- End: No Spawn Zone Adjustment ---
@@ -192,32 +192,32 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
   // --- Resize Effect (Scales the Left Column) ---
   useEffect(() => {
     const handleResize = () => {
-      const container = leftColRef.current; // Scale based on the left column's available width
+      const container = leftColRef.current;
       if (!container) return;
       const containerWidth = container.clientWidth;
-      const newScale = Math.min(1, containerWidth / ORIGINAL_WIDTH); // Don't scale larger than 1
+      const newScale = Math.min(1, containerWidth / ORIGINAL_WIDTH);
       setScale(newScale);
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
-    // Use ResizeObserver for potentially better performance if available
+
     let resizeObserver;
-    if (window.ResizeObserver && leftColRef.current) {
+    const currentLeftColRef = leftColRef.current; // Store the current ref value
+
+    if (window.ResizeObserver && currentLeftColRef) {
         resizeObserver = new ResizeObserver(handleResize);
-        resizeObserver.observe(leftColRef.current);
-    } else {
-        window.addEventListener('resize', handleResize);
+        resizeObserver.observe(currentLeftColRef);
     }
 
     return () => {
-         if (resizeObserver && leftColRef.current) {
-             resizeObserver.unobserve(leftColRef.current);
-         } else {
+        if (resizeObserver && currentLeftColRef) {
+            resizeObserver.unobserve(currentLeftColRef);
+        } else {
             window.removeEventListener('resize', handleResize);
-         }
+        }
     };
-  }, []); // Depends only on ORIGINAL_WIDTH constant
+}, []);
 
   // --- Mouse Event Handlers ---
 
@@ -476,13 +476,203 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
   const currentSelectedBox = (selectedBoxIndex !== null && selectedBoxIndex < symptomBoxes.length)
         ? symptomBoxes[selectedBoxIndex]
         : null;
+  
+  const InstructionPannel =() => {
+    return (
+      // --- Instructions Panel ---
+      <div className="h-[69vb]">
+          <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
+          <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
+              <li>Click symptom boxes on the left to view details here.</li>
+              <li>Click and drag boxes to rearrange them.</li>
+              <li>Lines connect symptoms to body locations.</li>
+              <li>Colors show severity: <span className="font-bold" style={{color: SEVERITY_COLORS_DARK[0]}}>Yellow</span> to <span className="font-bold" style={{color: SEVERITY_COLORS_DARK[4]}}>Red</span>.</li>
+              <li>Boxes avoid spawning in the very center initially.</li>
+              <li>Hover over boxes for a highlight.</li>
+          </ul>
+      </div>
+      );
+  }
+
+  
+const ChatBotPatient = () => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const handleSendMessage = () => {
+    if (input.trim()) {
+      const newUserMessage = { text: input, sender: 'user' };
+      setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+      setInput('');
+
+      // Simulate bot response (replace with actual chatbot logic)
+      setTimeout(() => {
+        const botResponse = generateBotResponse(input);
+        const newBotMessage = { text: botResponse, sender: 'bot' };
+        setMessages((prevMessages) => [...prevMessages, newBotMessage]);
+      }, 500); // Simulate bot processing time
+    }
+  };
+
+  const generateBotResponse = (userMessage) => {
+    // Replace with your actual chatbot logic or API call
+    const lowerMessage = userMessage.toLowerCase();
+
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+      return "Hello! How can I assist you with the simulation today?";
+    } else if (lowerMessage.includes('symptoms')) {
+      return "Please describe the symptoms you'd like to simulate.";
+    } else if (lowerMessage.includes('parameters')) {
+        return "Which simulation parameters would you like to adjust?";
+    } else {
+      return "I'm still under development. Please provide more specific instructions.";
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[69vb] bg-gray-800 text-white bg-opacity-30 border-[1px] border-white border-opacity-40">
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`mb-2 p-2 rounded-lg ${
+              message.sender === 'user' ? 'bg-blue-600 self-end' : 'bg-gray-700 self-start'
+            }`}
+          >
+            {message.text}
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 flex items-center">
+        <input
+          type="text"
+          value={input}
+          onChange={handleInputChange}
+          className="flex-1 bg-transparent border border-gray-600 rounded-lg p-2 text-white mr-2 focus:border-red-300 focus:outline-none"
+          placeholder="Type your message..."
+        />
+        <button
+          onClick={handleSendMessage}
+          className="rounded-full p-2 hover:bg-gray-700 transition duration-300"
+        >
+          <Send className="rotate-45" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+  const InfoPannel = () => {
+    if (currentSelectedBox != null) {
+      return(
+        // --- Info Panel ---
+        <div className="m-8">
+        <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${PANEL_BORDER}`}>
+            {currentSelectedBox.name}
+        </h3>
+        <div className="grid grid-cols-1 gap-4 mb-3">
+            <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Severity:</label>
+                <div className="text-xl flex items-center" style={{ color: getStarColorBySeverity(currentSelectedBox.severity) }}>
+                    {"★".repeat(currentSelectedBox.severity) + "☆".repeat(5 - currentSelectedBox.severity)}
+                    <span className="text-sm text-gray-400 ml-2">({currentSelectedBox.severity}/5)</span>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Location:</label>
+                <div className="text-base text-gray-300">{currentSelectedBox.location}</div>
+            </div>
+        </div>
+        <div className="mt-2">
+            <label className="block text-sm font-medium text-gray-400 mb-1">Description:</label>
+            <p className={`text-sm text-gray-300 bg-gray-700 p-3 rounded ${PANEL_BORDER} border`}>
+                {currentSelectedBox.description || <span className="italic text-gray-500">No description provided.</span>}
+            </p>
+        </div>
+        <button
+            onClick={() => setSelectedBoxIndex(null)}
+            className={`mt-4 w-full px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+        >
+            Close Details
+        </button>
+    </div>
+  );
+    } else {
+      return(<InstructionPannel />)
+    }
+    
+  };
+
+  const ShowPannel = () => {
+  
+    const buttons = [
+      { id: 'info', icon: <Info className="w-6 h-6" />, title: 'Instructions on how to use the simulator' },
+      { id: 'chatbot', icon: <MessageSquare className="w-6 h-6" />, title: "Interact with the simulated patient's digital assistant." },
+      { id: 'submit', icon: <Send className="w-6 h-6" />, title: 'Submit the current scenario for review.' },
+      { id: 'view', icon: <Eye className="w-6 h-6" />, title: 'View the simulation output or results.' },
+    ];
+  
+    const renderContent = () => {
+      switch (activeButton) {
+        case 'info':
+          return <InstructionPannel />
+        case 'chatbot':
+          return <ChatBotPatient />;
+        case 'submit':
+          return <div>Clicked on Submit.</div>;
+        case 'view':
+          return <InfoPannel />;
+        default:
+          return <div>Select an option.</div>;
+      }
+    };
+  
+    return (
+      <div className="bg-gradient-to-br from-gray-900 to-gray-700">
+        <div className="flex items-center p-4 text-white font-sans">
+          <div className="mr-4">
+            <Heart className="text-red-300 w-8 h-8 animate-pulse" fill="none" strokeWidth={2} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Scenario Setup</h1>
+          </div>
+        </div>
+  
+        <div className="flex justify-center p-4 text-white font-sans">
+          {buttons.map((button) => (
+            <button
+              key={button.id}
+              className={`mx-2 p-2 rounded-full hover:bg-gray-700 transition duration-150 ${
+                activeButton === button.id ? 'text-red-300' : ''
+              }`}
+              title={button.title}
+              onClick={() => setActiveButton(button.id)}
+            >
+              {button.icon}
+            </button>
+          ))}
+        </div>
+        <div className="w-full h-1 bg-gradient-to-r from-transparent via-gray-900 to-transparent"></div>
+  
+        <div className="p-4 text-white font-sans">
+          {renderContent()}
+        </div>
+      </div>
+    );
+  };
 
   return (
     // Main container with dark theme and flex layout
     <div ref={containerRef} className={`flex flex-col bgforsim md:flex-row md:p-2 gap-6 md:gap-8 ${DARK_THEME_BG} ${DARK_THEME_TEXT} min-h-screen font-sans`}>
 
       {/* Left Column: Canvas and Image */}
-      <div ref={leftColRef} className="flex-shrink-0 w-full md:w-2/3 lg:w-3/4 relative ">
+      <div ref={leftColRef} className="flex-shrink-0 w-full md:w-3/5 lg:w-4/6 relative ">
          {/* Inner container to control max width based on original image dimensions */}
          <div className="text-center">
           <h1 
@@ -515,54 +705,10 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
       </div>
 
       {/* Right Column: Instructions and Info Panel */}
-      <div className={`w-full md:w-1/3 lg:w-1/4 p-4 rounded-lg border ${PANEL_BG} ${PANEL_BORDER} flex flex-col`}>
-         <div className="flex-grow overflow-y-auto"> {/* Allow scrolling if content exceeds height */}
-             {currentSelectedBox ? (
-                 // --- Info Panel ---
-                 <div>
-                     <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${PANEL_BORDER}`}>
-                         {currentSelectedBox.name}
-                     </h3>
-                     <div className="grid grid-cols-1 gap-4 mb-3">
-                         <div>
-                             <label className="block text-sm font-medium text-gray-400 mb-1">Severity:</label>
-                             <div className="text-xl flex items-center" style={{ color: getStarColorBySeverity(currentSelectedBox.severity) }}>
-                                 {"★".repeat(currentSelectedBox.severity) + "☆".repeat(5 - currentSelectedBox.severity)}
-                                 <span className="text-sm text-gray-400 ml-2">({currentSelectedBox.severity}/5)</span>
-                             </div>
-                         </div>
-                         <div>
-                             <label className="block text-sm font-medium text-gray-400 mb-1">Location:</label>
-                             <div className="text-base text-gray-300">{currentSelectedBox.location}</div>
-                         </div>
-                     </div>
-                     <div className="mt-2">
-                         <label className="block text-sm font-medium text-gray-400 mb-1">Description:</label>
-                         <p className={`text-sm text-gray-300 bg-gray-700 p-3 rounded ${PANEL_BORDER} border`}>
-                             {currentSelectedBox.description || <span className="italic text-gray-500">No description provided.</span>}
-                         </p>
-                     </div>
-                     <button
-                         onClick={() => setSelectedBoxIndex(null)}
-                         className={`mt-4 w-full px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-                     >
-                         Close Details
-                     </button>
-                 </div>
-             ) : (
-                 // --- Instructions Panel ---
-                 <div>
-                     <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
-                     <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
-                         <li>Click symptom boxes on the left to view details here.</li>
-                         <li>Click and drag boxes to rearrange them.</li>
-                         <li>Lines connect symptoms to body locations.</li>
-                         <li>Colors show severity: <span className="font-medium" style={{color: SEVERITY_COLORS_DARK[0]}}>Yellow</span> to <span className="font-medium" style={{color: SEVERITY_COLORS_DARK[4]}}>Red</span>.</li>
-                         <li>Boxes avoid spawning in the very center initially.</li>
-                         <li>Hover over boxes for a highlight.</li>
-                     </ul>
-                 </div>
-             )}
+      <div className={`w-full md:w-2/5 lg:w-3/5 max-h-[92vh] rounded-lg border ${PANEL_BG} ${PANEL_BORDER} flex flex-col`}>
+         <div className="flex-grow overflow-y-auto"> 
+          {/* Allow scrolling if content exceeds height */}
+          <ShowPannel />
          </div>
       </div>
 

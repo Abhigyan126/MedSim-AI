@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import useAuthCheck from "./auth_check";
+import useAuthCheck from "../components/auth_check";
 import { useNavigate } from "react-router-dom";
-import API from "./api";
-import "../styles/blob.css";
-import Chatbot from "./chatbot";
-import Sidebar from "./sidebar";
-import SymptomVisualizer from "./drawsymptom";
+import API from "../components/api";
+import "../../styles/blob.css";
+import Chatbot from "../components/chatbot";
+import Sidebar from "../components/sidebar";
+import SymptomVisualizer from "../components/drawsymptom";
 
 
 const coordinatesData = [
@@ -240,7 +240,6 @@ const Simulator = () => {
         <div className="relative">
             {/* Website content */}
             <SymptomVisualizer coordinatesData={coordinatesData} symptomsData={symptomsData}/>
-            <h1>This is your symptom Simulator</h1>
             
 
             {/* Bottom Bar */}

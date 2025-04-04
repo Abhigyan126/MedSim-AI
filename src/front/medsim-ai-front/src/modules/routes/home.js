@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import useAuthCheck from "./auth_check";
+import useAuthCheck from "../components/auth_check";
 import { useNavigate } from "react-router-dom";
-import API from "./api";
-import "../styles/blob.css";
-import Chatbot from "./chatbot";
-import Sidebar from "./sidebar";
-
+import API from "../components/api";
+import "../../styles/blob.css";
+import Chatbot from "../components/chatbot";
+import Sidebar from "../components/sidebar";
 const Homepage = () => {
     const [showChat, setShowChat] = useState(false);
     const [showNavbar, setShowNavbar] = useState(false);

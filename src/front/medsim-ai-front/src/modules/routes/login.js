@@ -1,9 +1,9 @@
-import "../styles/blob.css";
+import "../../styles/blob.css";
 import { useState } from "react";
-import API from "./api";
+import API from "../components/api";
 import { useNavigate } from "react-router-dom";
-import Chatbot from "./chatbot";
-import Sidebar from "./sidebar";
+import Chatbot from "../components/chatbot";
+import Sidebar from "../components/sidebar";
 
 /* Vertical Divider Component */
 function VerticalDivider() {

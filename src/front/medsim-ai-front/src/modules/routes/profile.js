@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuthCheck from './auth_check';
-import API from './api';
-import Chatbot from "./chatbot";
-import Sidebar from "./sidebar";
-import "../styles/blob.css";
+import useAuthCheck from '../components/auth_check';
+import API from '../components/api';
+import Chatbot from "../components/chatbot";
+import Sidebar from "../components/sidebar";
+import "../../styles/blob.css";
 
 const EmojiPicker = ({ emojis, currentEmoji, onSelect, onClose }) => {
   return (

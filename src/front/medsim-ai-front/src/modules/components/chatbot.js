@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import API from "./api";
-import "../styles/blob.css";
+import "../../styles/blob.css";
 import { useNavigate } from "react-router-dom";
 
 
@@ -83,6 +83,10 @@ const Chatbot = ({ showChat, setShowChat }) => {
             case 'medsim':
                 ai_send('Redirecting to Medical simulator');
                 break;
+            default:
+                console.log('Case not mapped in chatbot.js')
+                break
+
         }
     }
 
@@ -95,18 +99,13 @@ const Chatbot = ({ showChat, setShowChat }) => {
             const response = await API.post("/intent", { message });
             handle_intent(response.data.intent);
         } catch (error) {
-            if (error.response.status == 401) {
+            if (error.response.status === 401) {
                 ai_send('Please Login to comunicate')
             }
             console.error("Error sending message:", error);
         }
         setMessage("");
     };
-
-    useEffect(() => {
-        window.ai_send = ai_send;
-        window.user_send = user_send;
-    }, []);
 
     if (!showChat) return null;
 

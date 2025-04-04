@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import API from "./api";
+import API from "../components/api";
 import { useNavigate } from "react-router-dom";
 
 const Logout = () => {

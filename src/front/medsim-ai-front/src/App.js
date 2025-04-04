@@ -1,11 +1,10 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from './components/login';
-import Homepage from './components/home';
-import Logout from './components/logout';
-import Profile from './components/profile';
-import Simulator from './components/symptom';
-
+import Login from './modules/routes/login';
+import Homepage from './modules/routes/home';
+import Logout from './modules/routes/logout';
+import Profile from './modules/routes/profile';
+import Simulator from './modules/routes/symptom';
 function App() {
   return (
     <Router>
