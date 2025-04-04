@@ -4,22 +4,67 @@ import { useEffect, useState } from "react";
 import API from "./api";
 
 
+//function to fetch and cahce image locally
+// Utility function to hash an email (SHA-256)
+async function hashEmail(email) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(email);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
-async function handleImage({setSvgData}) {
+async function handleImage(setSvgData, email) {
+  if (!email) {
+    console.error("Email is required for caching.");
+    return;
+  }
+
+  // Hash the email for secure storage
+  const hashedEmail = await hashEmail(email);
+  const CACHE_KEY = `identicon_svg_${hashedEmail}`; // Secure hashed key
+  const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
+
   try {
-    const response = await API.get("/get_identicon");
-    if (response.data.svg) {
-      setSvgData(response.data.svg);
+    // Step 1: Check user-specific cache
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      const { svg, timestamp } = JSON.parse(cachedData);
+      if (Date.now() - timestamp < EXPIRY_TIME) {
+        console.log("Using cached SVG for:", email);
+        setSvgData(svg);
+        return;
+      } else {
+        console.log("Cache expired for:", email);
+        localStorage.removeItem(CACHE_KEY); // Remove expired cache
+      }
     }
-} catch (error) {
+
+    // Step 2: Fetch from API
+    const response = await API.get("/get_identicon");
+    if (response.data?.svg) {
+      setSvgData(response.data.svg);
+
+      // Store user-specific SVG in localStorage with timestamp
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        svg: response.data.svg,
+        timestamp: Date.now(),
+      }));
+    } else {
+      console.warn("API response did not contain an SVG.");
+    }
+  } catch (error) {
     console.error("Error fetching Identicon:", error.response?.data?.message || error.message);
+  }
 }
-}
+
+
 /* Navigatation Button Function */
 const Sidebar = ({ username="?" , name="?" }) => {
     const [svgData, setSvgData] = useState(null);
     useEffect(() => {
-      handleImage({setSvgData});
+      handleImage(setSvgData, name);
     });
     const navigate = useNavigate();
     const navItems = [
@@ -31,7 +76,7 @@ const Sidebar = ({ username="?" , name="?" }) => {
       ];
   
     return (
-      <div className="fixed left-0 top-0 w-[17%] h-[95%] bg-gray-900 backdrop-blur-md shadow-lg flex flex-col justify-between text-white">
+      <div className="fixed left-0 top-0 w-[250px] h-[95%] bg-gray-900 backdrop-blur-md shadow-lg flex flex-col justify-between text-white">
         {/* Top Section: User Info + Navigation Buttons */}
         <div className="flex flex-col gap-6 p-6">
            {/* Identicon Image (Centered) */}
