@@ -5,64 +5,203 @@ import API from "./api";
 import "../styles/blob.css";
 import Chatbot from "./chatbot";
 import Sidebar from "./sidebar";
+import SymptomVisualizer from "./drawsymptom";
 
 
-
-const partsData = [
-    { name: "Head", condition: "Normal", x: 13, y: 10, lineStartX: 134, lineStartY: 20 },
-    { name: "Heart", condition: "Critical", x: 270, y: 100, lineStartX: 159, lineStartY: 110 },
-    { name: "Liver", condition: "Warning", x: 13, y: 120, lineStartX: 140, lineStartY: 130 },
-    { name: "Lungs", condition: "Warning", x: 13, y: 75, lineStartX: 139, lineStartY: 87 },
-    { name: "Kidney", condition: "Warning", x: 270, y: 150, lineStartX: 140, lineStartY: 180 },
-    { name: "Neck", condition: "Warning", x: 270, y: 45, lineStartX: 140, lineStartY: 180 },
-    { name: "GI Track", condition: "Warning", x: 270, y: 175, lineStartX: 140, lineStartY: 180 },
-    { name: "Urinary system", condition: "Warning", x: 13, y: 150, lineStartX: 140, lineStartY: 180 },
-    { name: "Left ARM", condition: "Warning", x: 13, y: 200, lineStartX: 140, lineStartY: 180 },
-    { name: "Right ARM", condition: "Warning", x: 270, y: 200, lineStartX: 140, lineStartY: 180 },
-    { name: "Left LEG", condition: "Warning", x: 13, y: 350, lineStartX: 140, lineStartY: 180 },
-    { name: "Right LEG", condition: "Warning", x: 270, y: 350, lineStartX: 140, lineStartY: 180 },
-    { name: "Body", condition: "Warning", x: 120, y: 420, lineStartX: 140, lineStartY: 180 }
-];
-
-const getColor = (condition) => {
-    switch (condition) {
-        case "Normal": return "bg-green-500";
-        case "Warning": return "bg-yellow-500";
-        case "Critical": return "bg-red-500";
-        default: return "bg-gray-500";
+const coordinatesData = [
+    {
+      "name": "Head",
+      "label": {
+        "relX": 0.33555555555555555,
+        "relY": 0.05272727272727273,
+        "x": 302,
+        "y": 29
+      },
+      "target": {
+        "relX": 0.47444444444444445,
+        "relY": 0.05272727272727273,
+        "x": 427,
+        "y": 29
+      }
+    },
+    {
+      "name": "Respiratory",
+      "label": {
+        "relX": 0.28444444444444444,
+        "relY": 0.23454545454545456,
+        "x": 256,
+        "y": 129
+      },
+      "target": {
+        "relX": 0.48,
+        "relY": 0.23454545454545456,
+        "x": 432,
+        "y": 129
+      }
+    },
+    {
+      "name": "Cardiovascular",
+      "label": {
+        "relX": 0.6466666666666666,
+        "relY": 0.29454545454545455,
+        "x": 582,
+        "y": 162
+      },
+      "target": {
+        "relX": 0.5055555555555555,
+        "relY": 0.29454545454545455,
+        "x": 455,
+        "y": 162
+      }
+    },
+    {
+      "name": "Gastrointestinal",
+      "label": {
+        "relX": 0.27111111111111114,
+        "relY": 0.43636363636363634,
+        "x": 244,
+        "y": 240
+      },
+      "target": {
+        "relX": 0.4711111111111111,
+        "relY": 0.43636363636363634,
+        "x": 424,
+        "y": 240
+      }
+    },
+    {
+      "name": "Neurological",
+      "label": {
+        "relX": 0.6477777777777778,
+        "relY": 0.04,
+        "x": 583,
+        "y": 22
+      },
+      "target": {
+        "relX": 0.5,
+        "relY": 0.04,
+        "x": 450,
+        "y": 22
+      }
+    },
+    {
+      "name": "Urinary",
+      "label": {
+        "relX": 0.76,
+        "relY": 0.3890909090909091,
+        "x": 684,
+        "y": 214
+      },
+      "target": {
+        "relX": 0.5233333333333333,
+        "relY": 0.39454545454545453,
+        "x": 471,
+        "y": 217
+      }
+    },
+    {
+      "name": "Hands",
+      "label": {
+        "relX": 0.72,
+        "relY": 0.5609090909090909,
+        "x": 648,
+        "y": 309
+      },
+      "target": {
+        "relX": 0.5933333333333334,
+        "relY": 0.5618181818181818,
+        "x": 534,
+        "y": 309
+      }
+    },
+    {
+      "name": "Legs",
+      "label": {
+        "relX": 0.36333333333333334,
+        "relY": 0.7163636363636363,
+        "x": 327,
+        "y": 394
+      },
+      "target": {
+        "relX": 0.47,
+        "relY": 0.7163636363636363,
+        "x": 423,
+        "y": 394
+      }
+    },
+    {
+      "name": "Reproductive System ",
+      "label": {
+        "relX": 0.13666666666666666,
+        "relY": 0.5345454545454545,
+        "x": 123,
+        "y": 294
+      },
+      "target": {
+        "relX": 0.4988888888888889,
+        "relY": 0.5345454545454545,
+        "x": 449,
+        "y": 294
+      }
     }
-};
+  ]
 
-function Setupdiagram() {
-    return (
-        <div className="flex justify-center items-start min-h-screen bg-gray-100 p-4 m-6">
-            {/* Card-like design */}
-            <div className="relative w-[900px] h-[550px] bg-white shadow-lg rounded-lg overflow-hidden">
-                {/* Background SVG */}
-                <img src="images/body_diagram.svg" alt="Diagram" className="w-full h-full object-contain" />
-
-                {/* SVG for Lines */}
-                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                    {partsData.map((part, index) => (
-                        <line key={index}
-                            x1={part.lineStartX} y1={part.lineStartY} 
-                            x2={part.x + 10} y2={part.y + 10}
-                            stroke="black" strokeWidth="2" />
-                    ))}
-                </svg>
-
-                {/* Dynamic Labels */}
-                {partsData.map((part, index) => (
-                    <div key={index} 
-                        className={`absolute ${getColor(part.condition)} text-white text-xs font-bold px-2 py-1 rounded`}
-                        style={{ top: part.y, left: part.x }}>
-                        {part.name}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
+  const symptomsData = [
+    {
+      "name": "Headache",
+      "description": "Throbbing pain, primarily in the temples",
+      "severity": 3,
+      "location": "Head"
+    },
+    {
+      "name": "Cough",
+      "description": "Forceful expulsion of air from the lungs",
+      "severity": 2,
+      "location": "Respiratory"
+    },
+    {
+      "name": "Chest Pain",
+      "description": "Discomfort or pain in the chest area",
+      "severity": 4,
+      "location": "Cardiovascular"
+    },
+    {
+      "name": "Abdominal Pain",
+      "description": "Pain or discomfort in the stomach area",
+      "severity": 3,
+      "location": "Gastrointestinal"
+    },
+    {
+      "name": "Numbness",
+      "description": "Loss of sensation in a part of the body",
+      "severity": 2,
+      "location": "Neurological"
+    },
+    {
+      "name": "Painful Urination",
+      "description": "Burning or discomfort during urination",
+      "severity": 3,
+      "location": "Urinary"
+    },
+    {
+      "name": "Tingling",
+      "description": "Pins and needles sensation",
+      "severity": 1,
+      "location": "Hands"
+    },
+    {
+      "name": "Joint Pain",
+      "description": "Pain in the joints",
+      "severity": 3,
+      "location": "Legs"
+    },
+    {
+      "name": "Pelvic Pain",
+      "description": "Pain in the lower abdomen or pelvic region",
+      "severity": 3,
+      "location": "Reproductive System"
+    }
+  ]
 //Simulator code below 
 
 const Simulator = () => {
@@ -100,7 +239,7 @@ const Simulator = () => {
     return (
         <div className="relative">
             {/* Website content */}
-            <Setupdiagram />
+            <SymptomVisualizer coordinatesData={coordinatesData} symptomsData={symptomsData}/>
             <h1>This is your symptom Simulator</h1>
             
 
