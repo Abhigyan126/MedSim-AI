@@ -13,7 +13,6 @@ const DARK_THEME_TEXT = "text-gray-200";
 const PANEL_BG = "bg-gray-800";
 const PANEL_BORDER = "border-gray-700";
 const TEXT_COLOR_CANVAS = "#E5E7EB"; // Light gray for canvas text
-const TEXT_MUTED_CANVAS = "#9CA3AF"; // Muted gray for location
 const LINE_COLOR_DARK = "rgba(255, 255, 255, 0.8)"; // Gray-400 with opacity
 const SELECTED_BORDER_COLOR_DARK = "#3B82F6"; // Blue-500
 const DEFAULT_BORDER_COLOR_DARK = "#6B7280"; // Gray-500
@@ -233,38 +232,36 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
 
   const handleMouseDown = useCallback((e) => {
     const { x: mouseX, y: mouseY } = getMousePos(e);
-    let clickedIndex = -1;
+    let clickedOriginalIndex = -1; // Store the index in the *current* array
+
+    // Find the box clicked (iterate backwards for top-most box)
     for (let i = symptomBoxes.length - 1; i >= 0; i--) {
       const box = symptomBoxes[i];
       if (
         mouseX >= box.x && mouseX <= box.x + BOX_WIDTH &&
         mouseY >= box.y && mouseY <= box.y + BOX_HEIGHT
       ) {
-        clickedIndex = i;
+        clickedOriginalIndex = i;
         break;
       }
     }
 
-    if (clickedIndex !== -1) {
-        const box = symptomBoxes[clickedIndex];
-        const currentDraggingId = box.id; // Use stable ID
-        setDraggingIndex(clickedIndex); // Still need index for immediate update
-        setSelectedBoxIndex(clickedIndex);
-        setDragOffset({ x: mouseX - box.x, y: mouseY - box.y });
-
-        // Reorder array to bring clicked item to end (drawn last/on top)
-        setSymptomBoxes(prevBoxes => {
-            const clickedBox = prevBoxes[clickedIndex];
-            const otherBoxes = prevBoxes.filter((_, idx) => idx !== clickedIndex);
-            return [...otherBoxes, clickedBox];
-        });
-        // IMPORTANT: Update draggingIndex to the new index (which is now length - 1)
-        setDraggingIndex(symptomBoxes.length - 1);
+    if (clickedOriginalIndex !== -1) {
+      const clickedBox = symptomBoxes[clickedOriginalIndex];
+      const newBoxes = [
+        ...symptomBoxes.filter((_, idx) => idx !== clickedOriginalIndex),
+        clickedBox
+      ];
+      const newIndex = newBoxes.length - 1;
+      setSymptomBoxes(newBoxes);
+      setSelectedBoxIndex(newIndex);
+      setDraggingIndex(newIndex);
+      setDragOffset({ x: mouseX - clickedBox.x, y: mouseY - clickedBox.y });
 
     } else {
       setSelectedBoxIndex(null);
     }
-  }, [getMousePos, symptomBoxes]); // Added symptomBoxes dependency
+  }, [getMousePos, symptomBoxes]); 
 
   const handleMouseMove = useCallback((e) => {
     const { x: mouseX, y: mouseY } = getMousePos(e);
@@ -274,7 +271,6 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
     let currentHoveredIndex = -1;
     let isOverBox = false;
 
-    // Check hover first (reverse order for topmost)
     for (let i = symptomBoxes.length - 1; i >= 0; i--) {
         const box = symptomBoxes[i];
         if (
@@ -288,18 +284,15 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
     }
     setHoveredIndex(currentHoveredIndex);
 
-    // Dragging logic
-    if (draggingIndex !== null && draggingIndex < symptomBoxes.length) { // Check index validity
+    if (draggingIndex !== null && draggingIndex < symptomBoxes.length) { 
       const newX = mouseX - dragOffset.x;
       const newY = mouseY - dragOffset.y;
       const margin = 2;
       const boundedX = Math.max(margin, Math.min(ORIGINAL_WIDTH - BOX_WIDTH - margin, newX));
       const boundedY = Math.max(margin, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT - margin, newY));
 
-      // Update state immutably
       setSymptomBoxes(prevBoxes => {
           const updatedBoxes = [...prevBoxes];
-          // Double-check index validity in case of rapid state changes
           if (draggingIndex < updatedBoxes.length) {
               updatedBoxes[draggingIndex] = {
                 ...updatedBoxes[draggingIndex],
@@ -311,7 +304,6 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
       });
        canvas.style.cursor = 'grabbing';
     } else {
-        // Set cursor based on hover state when not dragging
         canvas.style.cursor = isOverBox ? 'grab' : 'default';
     }
 
