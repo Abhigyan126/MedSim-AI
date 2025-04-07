@@ -130,7 +130,7 @@ const coordinatesData = [
       }
     },
     {
-      "name": "Reproductive System ",
+      "name": "Reproductive System",
       "label": {
         "relX": 0.13666666666666666,
         "relY": 0.5345454545454545,
@@ -146,62 +146,7 @@ const coordinatesData = [
     }
   ]
 
-  const symptomsData = [
-    {
-      "name": "Headache",
-      "description": "Throbbing pain, primarily in the temples",
-      "severity": 3,
-      "location": "Head"
-    },
-    {
-      "name": "Cough",
-      "description": "Forceful expulsion of air from the lungs",
-      "severity": 2,
-      "location": "Respiratory"
-    },
-    {
-      "name": "Chest Pain",
-      "description": "Discomfort or pain in the chest area",
-      "severity": 4,
-      "location": "Cardiovascular"
-    },
-    {
-      "name": "Abdominal Pain",
-      "description": "Pain or discomfort in the stomach area",
-      "severity": 3,
-      "location": "Gastrointestinal"
-    },
-    {
-      "name": "Numbness",
-      "description": "Loss of sensation in a part of the body",
-      "severity": 2,
-      "location": "Neurological"
-    },
-    {
-      "name": "Painful Urination",
-      "description": "Burning or discomfort during urination",
-      "severity": 3,
-      "location": "Urinary"
-    },
-    {
-      "name": "Tingling",
-      "description": "Pins and needles sensation",
-      "severity": 1,
-      "location": "Hands"
-    },
-    {
-      "name": "Joint Pain",
-      "description": "Pain in the joints",
-      "severity": 3,
-      "location": "Legs"
-    },
-    {
-      "name": "Pelvic Pain",
-      "description": "Pain in the lower abdomen or pelvic region",
-      "severity": 3,
-      "location": "Reproductive System"
-    }
-  ]
+  const symptomsData = [{"name": "Memory Loss", "description": "Difficulty remembering recent events, conversations, or appointments", "severity": 4, "location": "Neurological"}, {"name": "Confusion", "description": "Disorientation, difficulty following conversations or instructions", "severity": 3, "location": "Neurological"}, {"name": "Difficulty with Language", "description": "Trouble finding words, expressing thoughts, or understanding language", "severity": 3, "location": "Neurological"}, {"name": "Impaired Judgment", "description": "Making poor decisions or exhibiting unusual behavior", "severity": 2, "location": "Neurological"}, {"name": "Changes in Personality", "description": "Becoming more withdrawn, agitated, or apathetic", "severity": 2, "location": "Neurological"}, {"name": "Loss of Spatial Awareness", "description": "Difficulty navigating familiar places, getting lost easily", "severity": 3, "location": "Neurological"}, {"name": "Repetitive Questions", "description": "Asking the same questions repeatedly", "severity": 2, "location": "Neurological"}, {"name": "Misplacing Items", "description": "Frequently misplacing objects or losing track of personal belongings", "severity": 2, "location": "Neurological"}]
 //Simulator code below 
 
 const Simulator = () => {

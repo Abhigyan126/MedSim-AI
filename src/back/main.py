@@ -8,10 +8,14 @@ from bson import ObjectId
 from dotenv import load_dotenv
 from chatbot.inference import IntentClassifier
 from identity_icon import IdentIcon
+from llm import LLM
 import os
 
 #load Intentclassifier
 #intent_classifier = IntentClassifier()
+
+#initialise llm
+llm = LLM()
 
 #loading variables from .env
 load_dotenv()
@@ -146,6 +150,27 @@ def get_identicon():
     except Exception as e:
         return jsonify({"message": "Invalid User ID", "error": str(e)}), 400
 
+def get_symptoms():
+    """
+    Fetches Symptoms for a given dieses
+    """
+    try:
+        locations = "'Head', 'Respiratory', 'Cardiovascular', 'Gastrointestinal', 'Neurological', 'Urinary', 'Hands', 'Legs', 'Reproductive System'"
+        dieses = "Alzymers"
+        schema = ''' the following is the schema to give the output in {
+      "name": "Headache",
+      "description": "Throbbing pain, primarily in the temples",
+      "severity": 3,
+      "location": "Head"
+    } '''
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following dieses {dieses}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}"
+        response = llm.model(prompt)
+        print(response)
+    except Exception as e:
+        print(e)
+
+
 if __name__ == "__main__":
+    get_symptoms()
     app.run(debug=True)
 

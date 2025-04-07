@@ -83,43 +83,130 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
   }, []);
 
   // --- Overlap Prevention ---
-  const preventOverlap = useCallback((boxes) => {
-    const adjustedBoxes = [...boxes];
-    let changed = true;
-    let loops = 0;
+ // --- Overlap Prevention ---
+ const preventOverlap = useCallback((boxes) => {
+  const adjustedBoxes = [...boxes];
+  let changed = true;
+  let loops = 0;
+  // Increase max loops slightly as adjustments might be more complex
+  const MAX_LOOPS = (MAX_OVERLAP_ADJUST_ATTEMPTS || 10) * adjustedBoxes.length * 1.5;
+  const VERTICAL_BIAS_FACTOR = 0.3; // How much vertical push to add for horizontal overlaps (0 to 1)
+  const SIDE_PUSH_FACTOR = 1.1; // Multiplier for horizontal push near center (1 = no change)
+  const CENTER_ZONE_WIDTH_RATIO = 0.3; // How much of the center width triggers side push (e.g., 30%)
 
-    while (changed && loops < MAX_OVERLAP_ADJUST_ATTEMPTS * adjustedBoxes.length) {
-      changed = false;
-      loops++;
+  // Helper to constrain a box position, respecting bounds and no-spawn zone
+  const constrainBoxPosition = (box) => {
+      const clampedX = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, box.x));
+      const clampedY = Math.max(0, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT, box.y));
+      let finalX = clampedX;
+      const finalY = clampedY;
 
-      for (let i = 0; i < adjustedBoxes.length; i++) {
-        for (let j = i + 1; j < adjustedBoxes.length; j++) {
-          if (boxesOverlap(adjustedBoxes[i], adjustedBoxes[j])) {
-            changed = true;
-            const dx = (adjustedBoxes[j].x + BOX_WIDTH / 2) - (adjustedBoxes[i].x + BOX_WIDTH / 2);
-            const dy = (adjustedBoxes[j].y + BOX_HEIGHT / 2) - (adjustedBoxes[i].y + BOX_HEIGHT / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy) || 1;
-            const moveX = (dx / distance) * OVERLAP_ADJUST_STEP;
-            const moveY = (dy / distance) * OVERLAP_ADJUST_STEP;
+      // Apply No-Spawn Zone constraint *after* clamping to general bounds
+      const boxRightEdge = finalX + BOX_WIDTH;
+      if (NO_SPAWN_ZONE_LEFT !== undefined && NO_SPAWN_ZONE_RIGHT !== undefined && boxRightEdge > NO_SPAWN_ZONE_LEFT && finalX < NO_SPAWN_ZONE_RIGHT) {
+           const boxCenterX = finalX + BOX_WIDTH / 2;
+           const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
 
-            adjustedBoxes[i].x -= moveX / 2;
-            adjustedBoxes[i].y -= moveY / 2;
-            adjustedBoxes[j].x += moveX / 2;
-            adjustedBoxes[j].y += moveY / 2;
+           // Push out towards the *nearest* edge of the no-spawn zone
+           if (boxCenterX < (NO_SPAWN_ZONE_LEFT + NO_SPAWN_ZONE_RIGHT) / 2) {
+                // Closer to left edge of zone
+                finalX = NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin;
+           } else {
+                // Closer to right edge of zone
+                finalX = NO_SPAWN_ZONE_RIGHT + pushMargin;
+           }
+           // Re-clamp X after potential push, ensuring it stays within canvas
+           finalX = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, finalX));
+      }
 
-            adjustedBoxes[i].x = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, adjustedBoxes[i].x));
-            adjustedBoxes[i].y = Math.max(0, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT, adjustedBoxes[i].y));
-            adjustedBoxes[j].x = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, adjustedBoxes[j].x));
-            adjustedBoxes[j].y = Math.max(0, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT, adjustedBoxes[j].y));
+      return { ...box, x: finalX, y: finalY };
+  };
+
+
+  while (changed && loops < MAX_LOOPS) {
+    changed = false;
+    loops++;
+    // --- Standard Overlap Resolution ---
+    for (let i = 0; i < adjustedBoxes.length; i++) {
+      for (let j = i + 1; j < adjustedBoxes.length; j++) {
+        if (boxesOverlap(adjustedBoxes[i], adjustedBoxes[j])) {
+          changed = true;
+          const boxI = adjustedBoxes[i];
+          const boxJ = adjustedBoxes[j];
+
+          const dx = (boxJ.x + BOX_WIDTH / 2) - (boxI.x + BOX_WIDTH / 2);
+          const dy = (boxJ.y + BOX_HEIGHT / 2) - (boxI.y + BOX_HEIGHT / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy) || 1; // Prevent division by zero
+
+          // Calculate base movement vector normalized
+          let normX = dx / distance;
+          let normY = dy / distance;
+
+          // --- Add Vertical Bias to break horizontal lines ---
+          // If movement is mostly horizontal, add a small vertical component
+          if (Math.abs(normX) > 0.85) { // Check if vectors are mostly horizontal
+               const verticalNudge = (Math.random() < 0.5 ? 1 : -1) * VERTICAL_BIAS_FACTOR;
+               // Adjust normY and re-normalize (approximately)
+               normY += verticalNudge;
+               const newMag = Math.sqrt(normX*normX + normY*normY) || 1;
+               normX /= newMag;
+               normY /= newMag;
           }
+
+          // Calculate the actual movement distance
+          let moveAmount = OVERLAP_ADJUST_STEP;
+
+          // --- Add Side Clinging Bias (Push outwards from center) ---
+          const centerZoneLeft = ORIGINAL_WIDTH * (0.5 - CENTER_ZONE_WIDTH_RATIO / 2);
+          const centerZoneRight = ORIGINAL_WIDTH * (0.5 + CENTER_ZONE_WIDTH_RATIO / 2);
+          const boxICenterX = boxI.x + BOX_WIDTH / 2;
+          const boxJCenterX = boxJ.x + BOX_WIDTH / 2;
+
+          // If either box is significantly in the central zone
+          if ((boxICenterX > centerZoneLeft && boxICenterX < centerZoneRight) ||
+              (boxJCenterX > centerZoneLeft && boxJCenterX < centerZoneRight))
+          {
+               // Increase the horizontal component of the push slightly
+               // This makes them move more left/right when resolving overlaps in the middle
+               if (Math.abs(normX) > 0.1) { // Only if there's some horizontal component already
+                    normX *= SIDE_PUSH_FACTOR;
+                    // Re-normalize (approximately) after bias
+                    const biasedMag = Math.sqrt(normX*normX + normY*normY) || 1;
+                    normX /= biasedMag;
+                    normY /= biasedMag;
+               }
+          }
+
+
+          // Apply calculated movement based on final normalized direction and step
+          const moveX = normX * moveAmount;
+          const moveY = normY * moveAmount;
+
+          // Apply movement tentatively
+          adjustedBoxes[i].x -= moveX / 2;
+          adjustedBoxes[i].y -= moveY / 2;
+          adjustedBoxes[j].x += moveX / 2;
+          adjustedBoxes[j].y += moveY / 2;
+
+          // Apply constraints immediately after adjusting a pair
+          adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
+          adjustedBoxes[j] = constrainBoxPosition(adjustedBoxes[j]);
         }
       }
     }
-     if (loops >= MAX_OVERLAP_ADJUST_ATTEMPTS * adjustedBoxes.length) {
-        console.warn("Overlap prevention iteration limit reached.");
-     }
-    return adjustedBoxes;
-  }, [boxesOverlap]);
+  }
+
+   // Final constraint pass after all loops (safety net)
+   for (let i = 0; i < adjustedBoxes.length; i++) {
+         adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
+   }
+
+  if (loops >= MAX_LOOPS) {
+     console.warn("Overlap prevention iteration limit reached. Layout might not be optimal.");
+  }
+  return adjustedBoxes;
+  // Ensure necessary constants are available in scope (e.g., NO_SPAWN_ZONE_LEFT/RIGHT/PUSH_MARGIN, OVERLAP_ADJUST_STEP, BOX_WIDTH/HEIGHT, ORIGINAL_WIDTH/HEIGHT)
+}, [boxesOverlap]); // Add dependencies like NO_SPAWN_ZONE constants if they are props/state
 
   // --- Initialization Effect ---
   useEffect(() => {
@@ -133,61 +220,113 @@ function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
       return acc;
     }, {});
 
-    const initialBoxes = symptomsData.map((symptom, index) => {
-      const bodyPart = bodyParts[symptom.location?.toLowerCase()];
-      let initialPosX, initialPosY;
+    // --- Group symptoms by location to handle initial placement ---
+    const symptomsByLocation = symptomsData.reduce((acc, symptom, index) => {
+        const locKey = symptom.location?.toLowerCase() || 'unknown_location';
+        if (!acc[locKey]) {
+            acc[locKey] = [];
+        }
+        // Store the original symptom data along with its index
+        acc[locKey].push({ ...symptom, originalIndex: index });
+        return acc;
+    }, {});
 
+    const initialBoxes = [];
+    const INITIAL_SPREAD_RADIUS = 35; // Increase for more initial spread
+    const MIN_ANGLE_SPREAD = Math.PI / 3; // Minimum angle (60 deg) to spread over
+    const MAX_ANGLE_SPREAD = Math.PI * 1.2; // Maximum angle (216 deg)
+
+    Object.values(symptomsByLocation).forEach(group => {
+      if (group.length === 0) return;
+
+      const firstSymptom = group[0]; // Assume all in group share location/bodyPart
+      const bodyPart = bodyParts[firstSymptom.location?.toLowerCase()];
+      let baseX, baseY;
+
+      // Determine the base anchor point for the group
       if (bodyPart?.target) {
-        initialPosX = bodyPart.target.x - BOX_WIDTH / 2;
-        initialPosY = bodyPart.target.y - BOX_HEIGHT - 10;
+        baseX = bodyPart.target.x;
+        baseY = bodyPart.target.y; // Anchor at the target itself
       } else if (bodyPart?.label) {
-        initialPosX = bodyPart.label.x - BOX_WIDTH / 2;
-        initialPosY = bodyPart.label.y - BOX_HEIGHT - 10;
+        baseX = bodyPart.label.x;
+        baseY = bodyPart.label.y; // Anchor at the label
       } else {
-        initialPosX = Math.random() * (ORIGINAL_WIDTH - BOX_WIDTH);
-        initialPosY = Math.random() * (ORIGINAL_HEIGHT - BOX_HEIGHT);
+        // Fallback: random position if no body part found
+        baseX = Math.random() * (ORIGINAL_WIDTH - BOX_WIDTH);
+        baseY = Math.random() * (ORIGINAL_HEIGHT - BOX_HEIGHT);
       }
 
-      // --- Start: No Spawn Zone Adjustment ---
-      let adjustedPosX = initialPosX;
-      const boxRightEdge = initialPosX + BOX_WIDTH;
+      const numBoxesInGroup = group.length;
+      // Calculate spread angle based on number of boxes, capped between MIN and MAX
+      const totalAngle = Math.min(MAX_ANGLE_SPREAD, Math.max(MIN_ANGLE_SPREAD, numBoxesInGroup * (Math.PI / 6))); // Adjust multiplier as needed
+      const angleStep = numBoxesInGroup > 1 ? totalAngle / (numBoxesInGroup -1 ) : 0;
+      // Start angle slightly offset to center the arc (e.g., pointing upwards/outwards)
+      const startAngle = -Math.PI / 2 - totalAngle / 2;
 
-      // Check if the box initially overlaps the vertical no-spawn zone
-      if (boxRightEdge > NO_SPAWN_ZONE_LEFT && initialPosX < NO_SPAWN_ZONE_RIGHT) {
-          // Overlaps the zone, decide which way to push (towards nearest edge)
-          const boxCenterX = initialPosX + BOX_WIDTH / 2;
-          if (boxCenterX < ORIGINAL_WIDTH / 2) {
-              // Box center is left of canvas center, push left out of zone
-              adjustedPosX = NO_SPAWN_ZONE_LEFT - BOX_WIDTH - NO_SPAWN_ZONE_PUSH_MARGIN - Math.floor(Math.random() * 50) - 5;
-          } else {
-              // Box center is right of canvas center, push right out of zone
-              adjustedPosX = NO_SPAWN_ZONE_RIGHT + NO_SPAWN_ZONE_PUSH_MARGIN + Math.floor(Math.random() * 50) + 5;
-          }
-      }
-      // --- End: No Spawn Zone Adjustment ---
+      group.forEach((symptom, index) => {
+        let initialPosX, initialPosY;
+        const radius = numBoxesInGroup > 1 ? INITIAL_SPREAD_RADIUS + (index * 5) : 0; // Slightly increase radius for outer boxes
 
-      // Clamp final adjusted position to canvas bounds
-      let finalPosX = Math.max(5, Math.min(ORIGINAL_WIDTH - BOX_WIDTH - 5, adjustedPosX));
-      let finalPosY = Math.max(5, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT - 5, initialPosY)); // Y is not pushed by zone logic
+        if (numBoxesInGroup === 1) {
+          // Single box: Place it near the target, slightly offset upwards
+          initialPosX = baseX - BOX_WIDTH / 2;
+          initialPosY = baseY - BOX_HEIGHT - 15; // Standard initial offset upwards
+        } else {
+          // Multiple boxes: Spread them in an arc around the base point
+          const angle = startAngle + (index * angleStep);
+          const offsetX = Math.cos(angle) * radius;
+          const offsetY = Math.sin(angle) * radius - BOX_HEIGHT/2; // Apply offset relative to base, slightly raise the center
 
-      return {
-        id: index,
-        name: symptom.name || "Unknown Symptom",
-        description: symptom.description || "",
-        severity: symptom.severity || 1,
-        location: symptom.location || "Unknown",
-        x: finalPosX,
-        y: finalPosY,
-        color: getColorBySeverity(symptom.severity || 1),
-        initialBodyPart: bodyPart
-      };
+          initialPosX = baseX + offsetX - BOX_WIDTH / 2;
+          initialPosY = baseY + offsetY;
+        }
+
+        // --- Start: No Spawn Zone Adjustment (Applied after initial spread) ---
+        let adjustedPosX = initialPosX;
+        const boxRightEdge = initialPosX + BOX_WIDTH;
+        if (NO_SPAWN_ZONE_LEFT !== undefined && NO_SPAWN_ZONE_RIGHT !== undefined && boxRightEdge > NO_SPAWN_ZONE_LEFT && initialPosX < NO_SPAWN_ZONE_RIGHT) {
+            const boxCenterX = initialPosX + BOX_WIDTH / 2;
+            const pushDirection = (boxCenterX < ORIGINAL_WIDTH / 2) ? -1 : 1; // -1 left, 1 right
+            const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
+            const randomPush = Math.floor(Math.random() * 15); // Reduced randomness
+
+            adjustedPosX = (pushDirection === -1)
+               ? NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin - randomPush
+               : NO_SPAWN_ZONE_RIGHT + pushMargin + randomPush;
+        }
+        // --- End: No Spawn Zone Adjustment ---
+
+        // Clamp final initial position to canvas bounds
+        let finalPosX = Math.max(5, Math.min(ORIGINAL_WIDTH - BOX_WIDTH - 5, adjustedPosX));
+        let finalPosY = Math.max(5, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT - 5, initialPosY));
+
+        initialBoxes.push({
+          id: symptom.originalIndex, // Use original index for consistent ID if needed elsewhere
+          name: symptom.name || "Unknown Symptom",
+          description: symptom.description || "",
+          severity: symptom.severity || 1,
+          location: symptom.location || "Unknown",
+          x: finalPosX,
+          y: finalPosY,
+          color: getColorBySeverity(symptom.severity || 1),
+          initialBodyPart: bodyPart // Keep reference to original body part
+        });
+      });
     });
 
-    const adjustedBoxes = preventOverlap(initialBoxes); // Prevent overlap *after* initial placement/pushing
+    // Sort boxes by original index if order matters before overlap prevention
+    initialBoxes.sort((a, b) => a.id - b.id);
+
+    const adjustedBoxes = preventOverlap(initialBoxes); // Prevent overlap *after* initial placement/spreading
     setSymptomBoxes(adjustedBoxes);
     setSelectedBoxIndex(null);
 
-  }, [coordinatesData, symptomsData, getColorBySeverity, preventOverlap]);
+    // Make sure constants are defined (example values, adjust as needed)
+    // const NO_SPAWN_ZONE_LEFT = ORIGINAL_WIDTH * 0.4;
+    // const NO_SPAWN_ZONE_RIGHT = ORIGINAL_WIDTH * 0.6;
+    // const NO_SPAWN_ZONE_PUSH_MARGIN = 10;
+
+  }, [coordinatesData, symptomsData, getColorBySeverity, preventOverlap]); // Add constants like NO_SPAWN_ZONE if they are props or state
 
   // --- Resize Effect (Scales the Left Column) ---
   useEffect(() => {
