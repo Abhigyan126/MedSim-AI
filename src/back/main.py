@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from chatbot.inference import IntentClassifier
 from identity_icon import IdentIcon
 from llm import LLM
+import json
 import os
 
 #load Intentclassifier
@@ -150,27 +151,33 @@ def get_identicon():
     except Exception as e:
         return jsonify({"message": "Invalid User ID", "error": str(e)}), 400
 
+@app.route('/get_symptoms', methods=['POST'])
 def get_symptoms():
     """
     Fetches Symptoms for a given dieses
     """
     try:
+        data = request.get_json()
+        disease = data.get("disease", None)
+        if not disease:
+            return jsonify({"error": "Disease is required in the request body"}), 400
+
         locations = "'Head', 'Respiratory', 'Cardiovascular', 'Gastrointestinal', 'Neurological', 'Urinary', 'Hands', 'Legs', 'Reproductive System'"
-        dieses = "Alzymers"
         schema = ''' the following is the schema to give the output in {
       "name": "Headache",
       "description": "Throbbing pain, primarily in the temples",
       "severity": 3,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following dieses {dieses}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following dieses {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
-        print(response)
+        parsed = json.loads(response)
+        return jsonify(parsed)
+
     except Exception as e:
-        print(e)
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    get_symptoms()
     app.run(debug=True)
 
