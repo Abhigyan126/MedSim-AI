@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import "../../styles/blob.css";
-import { Heart, Info, MessageSquare, Send, Eye } from 'lucide-react';
+import API from "./api";
+import { Heart, Info, MessageSquare, Send, Eye, RefreshCw } from 'lucide-react';
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -48,8 +49,9 @@ const NO_SPAWN_ZONE_RIGHT = NO_SPAWN_ZONE_LEFT + NO_SPAWN_ZONE_WIDTH;
 const NO_SPAWN_ZONE_PUSH_MARGIN = 15; // How far to push away from the zone edge
 
 
-function SymptomVisualizer({ coordinatesData = [], symptomsData = [] }) {
-  const [activeButton, setActiveButton] = useState(null);
+function SymptomVisualizer({ coordinatesData = []}) {
+  const [symptomsData, setSymptomsData] = useState([]);
+  const [activeButton, setActiveButton] = useState(null); // states: info chatbot submit view
   const canvasRef = useRef(null);
   const containerRef = useRef(null); // Ref for the main container for potential future use
   const leftColRef = useRef(null); // Ref for the left column containing canvas
@@ -748,6 +750,70 @@ const ChatBotPatient = () => {
     
   };
 
+
+  const DefaultPannel = ({ symptomData, setSymptomsData }) => {
+    const [disease, setDisease] = useState('');
+    const [isLoading, setisLoading] = useState(false);
+    
+    const handleSubmit = async () => {
+      try {
+        setisLoading(true);
+        const response = await API.post('/get_symptoms', {
+          disease: disease
+        });
+        setSymptomsData(response.data);
+        setisLoading(false);
+      } catch (error) {
+        console.error('Error fetching symptoms:', error);
+      }
+    };
+    
+    return (
+      <div className="h-[69vb] flex justify-center text-white bg-black bg-opacity-10 backdrop-blur-sm">
+        {isLoading ? (
+          <div className="flex items-center justify-center">
+            {/* Spinner from Uiverse */}
+            <div className="loading inline-flex flex-col items-center justify-center"> {/* Added inline-flex and flex-col */}
+            <svg width="64px" height="48px">
+              <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="back"></polyline>
+              <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="front"></polyline>
+            </svg>
+            <div>
+              <p className="items-center justify center text-white text-sm text-opacity-50 py-4">Please wait while we fetch symptoms ..</p>
+            </div>
+          </div>
+        </div>
+        ) : (
+          <div className="relative p-6 my-12 rounded-lg w-full max-w-md mx-auto overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black to-transparent opacity-5"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black to-transparent opacity-5"></div>
+            <div className="relative z-10">
+              <div className="mb-6">
+                <label className="block text-xl font-medium text-gray-300 mb-2">
+                  Enter name of disease to simulate
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Diabetes"
+                  className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-5 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
+                  value={disease}
+                  onChange={(e) => setDisease(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={handleSubmit}
+                className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Begin
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+
   const ShowPannel = () => {
   
     const buttons = [
@@ -755,6 +821,7 @@ const ChatBotPatient = () => {
       { id: 'chatbot', icon: <MessageSquare className="w-6 h-6" />, title: "Interact with the simulated patient's digital assistant." },
       { id: 'submit', icon: <Send className="w-6 h-6" />, title: 'Submit the current scenario for review.' },
       { id: 'view', icon: <Eye className="w-6 h-6" />, title: 'View the simulation output or results.' },
+      { id: 'retry', icon: <RefreshCw className="w-6 h-6" />, title: 'Retry simulation' },
     ];
   
     const renderContent = () => {
@@ -767,8 +834,11 @@ const ChatBotPatient = () => {
           return <div>Clicked on Submit.</div>;
         case 'view':
           return <InfoPannel />;
+        case 'retry':
+          window.location.reload(true);
+          break;
         default:
-          return <div>Select an option.</div>;
+          return <DefaultPannel symptomData={symptomsData} setSymptomsData={setSymptomsData}/>;
       }
     };
   
