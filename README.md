@@ -36,6 +36,7 @@ create .env in src/back/ and fill in the following credentials
 ```bash
 mongo  = 'API key for mongodb'
 secret = 'Secret key for JWR'
+key = 'API key for gemini'
 ```
 <i>note: donot push the key in github, the .env in .gitignore will handle this automatically</i>
 

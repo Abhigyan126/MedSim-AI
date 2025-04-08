@@ -8,15 +8,39 @@ from bson import ObjectId
 from dotenv import load_dotenv
 from chatbot.inference import IntentClassifier
 from identity_icon import IdentIcon
+from schema_validation import SchemaValidator
 from llm import LLM
 import json
 import os
+
+# sample schema 
+sample_schema = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "required": ["name", "description", "severity", "location"],
+        "properties": {
+            "name": {"type": "string"},
+            "description": {"type": "string"},
+            "severity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+            },
+            "location": {"type": "string"}
+        },
+        "additionalProperties": False
+    }
+}
 
 #load Intentclassifier
 #intent_classifier = IntentClassifier()
 
 #initialise llm
 llm = LLM()
+
+# init schema validator
+schema_validator = SchemaValidator(sample_schema)
 
 #loading variables from .env
 load_dotenv()
@@ -166,13 +190,16 @@ def get_symptoms():
         schema = ''' the following is the schema to give the output in {
       "name": "Headache",
       "description": "Throbbing pain, primarily in the temples",
-      "severity": 3,
+      "severity": out of 5,
       "location": "Head"
     } '''
         prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following dieses {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
-        return jsonify(parsed)
+        if schema_validator.validate(parsed) == None:
+            return jsonify(parsed)
+        else:
+            return jsonify({"error": 'generated schema not valid'})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
