@@ -199,6 +199,7 @@ def get_symptoms():
         if schema_validator.validate(parsed) == None:
             return jsonify(parsed)
         else:
+            print(response)
             return jsonify({"error": 'generated schema not valid'})
 
     except Exception as e:
