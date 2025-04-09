@@ -193,7 +193,7 @@ def get_symptoms():
       "severity": out of 5,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following dieses {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
         if schema_validator.validate(parsed) == None:
