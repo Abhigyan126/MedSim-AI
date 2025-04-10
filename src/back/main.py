@@ -16,7 +16,7 @@ import json
 import os
 
 # constants
-SYMPTOM_DB_CACHE_THRESHOLD = 0.7
+SYMPTOM_DB_CACHE_THRESHOLD = 0.1 # change to 0.7
 DB_PATH = 'symptom_cache.db'
 DB_CACHE_LIMIT_UNIQUE = 10
 
@@ -207,10 +207,10 @@ def get_symptoms():
         schema = ''' the following is the schema to give the output in {
       "name": "Headache",
       "description": "Throbbing pain, primarily in the temples",
-      "severity": out of 5,
+      "severity": 5,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema},  also keep in mind that severity should be in numbers datatype not string in json and must be below 5 and non negetive. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
         validation = schema_validator.validate(parsed)
@@ -219,6 +219,7 @@ def get_symptoms():
             return jsonify(parsed)
         else:
             print(response)
+            print(validation)
             return jsonify({"error": 'generated schema not valid'})
 
     except Exception as e:
