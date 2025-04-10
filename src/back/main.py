@@ -9,11 +9,18 @@ from dotenv import load_dotenv
 from chatbot.inference import IntentClassifier
 from identity_icon import IdentIcon
 from schema_validation import SchemaValidator
+from symptom_cache import SymptomCache
 from llm import LLM
+import random
 import json
 import os
 
-# sample schema 
+# constants
+SYMPTOM_DB_CACHE_THRESHOLD = 0.7
+DB_PATH = 'symptom_cache.db'
+DB_CACHE_LIMIT_UNIQUE = 10
+
+# sample schema
 sample_schema = {
     "type": "array",
     "items": {
@@ -33,6 +40,10 @@ sample_schema = {
     }
 }
 
+# init Symptom Cache DB
+db_symptom_cache = SymptomCache(DB_PATH, DB_CACHE_LIMIT_UNIQUE)
+
+
 #load Intentclassifier
 #intent_classifier = IntentClassifier()
 
@@ -48,9 +59,9 @@ mongo_pass = os.getenv('mongo')                                         # api ke
 secret = os.getenv('secret')                                            # JWT secret key
 
 #constats
-db_cluster = 'cluster0'
-database_name = 'project1'
-username = 'abhigyanpandeycug'
+DB_CLUSTER = 'cluster0'
+DATABASE_NAME = 'project1'
+MONGO_USERNAME = 'abhigyanpandeycug'
 
 # flask initialisation
 app = Flask(__name__)
@@ -58,13 +69,13 @@ CORS(app, supports_credentials=True, origins='*', allow_headers=['Content-Type',
 bcrypt = Bcrypt(app)
 
 # database initialisation
-app.config["MONGO_URI"] = f"mongodb+srv://{username}:{mongo_pass}@{db_cluster}.o137pc7.mongodb.net/{database_name}?retryWrites=true&w=majority&appName={db_cluster}"
+app.config["MONGO_URI"] = f"mongodb+srv://{MONGO_USERNAME}:{mongo_pass}@{DB_CLUSTER}.o137pc7.mongodb.net/{DATABASE_NAME}?retryWrites=true&w=majority&appName={DB_CLUSTER}"
 mongo = PyMongo(app)
 users = mongo.db.users                                                  # Mongo Users Collection
 
 
 # flask api configration
-app.config["JWT_SECRET_KEY"] = secret 
+app.config["JWT_SECRET_KEY"] = secret
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]                          # Store JWT in HttpOnly cookies
 app.config["JWT_COOKIE_SECURE"] = False                                 # Set to True in production (HTTPS)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)              # 1 Day expiration of cookie
@@ -186,6 +197,12 @@ def get_symptoms():
         if not disease:
             return jsonify({"error": "Disease is required in the request body"}), 400
 
+        use_cache = random.random() <= 0.7
+        if use_cache:
+            cached = db_symptom_cache.get_cached_symptoms(disease)
+            if cached:
+                return jsonify(random.choice(cached))
+
         locations = "'Head', 'Respiratory', 'Cardiovascular', 'Gastrointestinal', 'Neurological', 'Urinary', 'Hands', 'Legs', 'Reproductive System'"
         schema = ''' the following is the schema to give the output in {
       "name": "Headache",
@@ -196,7 +213,9 @@ def get_symptoms():
         prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
-        if schema_validator.validate(parsed) == None:
+        validation = schema_validator.validate(parsed)
+        if validation == None:
+            db_symptom_cache.cache_symptoms(disease, parsed)
             return jsonify(parsed)
         else:
             print(response)
@@ -208,4 +227,3 @@ def get_symptoms():
 
 if __name__ == "__main__":
     app.run(debug=True)
-

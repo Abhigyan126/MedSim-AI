@@ -750,7 +750,7 @@ const ChatBotPatient = () => {
 
   };
 
-
+  // function for default pannel
   const DefaultPannel = ({ symptomData, setSymptomsData }) => {
     const [disease, setDisease] = useState('');
     const [isLoading, setisLoading] = useState(false);
@@ -761,8 +761,13 @@ const ChatBotPatient = () => {
         const response = await API.post('/get_symptoms', {
           disease: disease
         });
-        setSymptomsData(response.data);
-        setisLoading(false);
+        if (response.data.error) {
+          alert(`Error: ${response.data.error} \n please retry`);
+        } else {
+          setSymptomsData(response.data);
+          setisLoading(false);
+          setActiveButton('info');
+        }
       } catch (error) {
         console.error('Error fetching symptoms:', error);
       }
