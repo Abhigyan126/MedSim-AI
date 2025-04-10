@@ -20,7 +20,7 @@ SYMPTOM_DB_CACHE_THRESHOLD = 0.7
 DB_PATH = 'symptom_cache.db'
 DB_CACHE_LIMIT_UNIQUE = 10
 
-# sample schema 
+# sample schema
 sample_schema = {
     "type": "array",
     "items": {
@@ -75,7 +75,7 @@ users = mongo.db.users                                                  # Mongo 
 
 
 # flask api configration
-app.config["JWT_SECRET_KEY"] = secret 
+app.config["JWT_SECRET_KEY"] = secret
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]                          # Store JWT in HttpOnly cookies
 app.config["JWT_COOKIE_SECURE"] = False                                 # Set to True in production (HTTPS)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)              # 1 Day expiration of cookie
@@ -196,7 +196,7 @@ def get_symptoms():
         disease = data.get("disease", None)
         if not disease:
             return jsonify({"error": "Disease is required in the request body"}), 400
-        
+
         use_cache = random.random() <= 0.7
         if use_cache:
             cached = db_symptom_cache.get_cached_symptoms(disease)
@@ -210,7 +210,7 @@ def get_symptoms():
       "severity": out of 5,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}, also keep in mid severity should be in numbers datatype not string in json. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
         validation = schema_validator.validate(parsed)
@@ -219,7 +219,6 @@ def get_symptoms():
             return jsonify(parsed)
         else:
             print(response)
-            print(validation)
             return jsonify({"error": 'generated schema not valid'})
 
     except Exception as e:
@@ -228,4 +227,3 @@ def get_symptoms():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
