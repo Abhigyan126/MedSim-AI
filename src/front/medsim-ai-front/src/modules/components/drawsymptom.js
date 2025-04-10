@@ -29,7 +29,7 @@ const SEVERITY_COLORS_DARK = [
     "rgba(140, 40, 40, 0.9)",   // Softer Dark Red (5)
 ];
 
-  
+
 // Star colors matching severity for better visual cue
 const SEVERITY_STAR_COLORS_DARK = [
     "#FFD700", // **Gold (More Visible)**
@@ -402,7 +402,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
     } else {
       setSelectedBoxIndex(null);
     }
-  }, [getMousePos, symptomBoxes]); 
+  }, [getMousePos, symptomBoxes]);
 
   const handleMouseMove = useCallback((e) => {
     const { x: mouseX, y: mouseY } = getMousePos(e);
@@ -425,7 +425,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
     }
     setHoveredIndex(currentHoveredIndex);
 
-    if (draggingIndex !== null && draggingIndex < symptomBoxes.length) { 
+    if (draggingIndex !== null && draggingIndex < symptomBoxes.length) {
       const newX = mouseX - dragOffset.x;
       const newY = mouseY - dragOffset.y;
       const margin = 2;
@@ -617,7 +617,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const currentSelectedBox = (selectedBoxIndex !== null && selectedBoxIndex < symptomBoxes.length)
         ? symptomBoxes[selectedBoxIndex]
         : null;
-  
+
   const InstructionPannel =() => {
     return (
       // --- Instructions Panel ---
@@ -635,7 +635,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
       );
   }
 
-  
+
 const ChatBotPatient = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -747,14 +747,14 @@ const ChatBotPatient = () => {
     } else {
       return(<InstructionPannel />)
     }
-    
+
   };
 
 
   const DefaultPannel = ({ symptomData, setSymptomsData }) => {
     const [disease, setDisease] = useState('');
     const [isLoading, setisLoading] = useState(false);
-    
+
     const handleSubmit = async () => {
       try {
         setisLoading(true);
@@ -770,7 +770,7 @@ const ChatBotPatient = () => {
         console.error('Error fetching symptoms:', error);
       }
     };
-    
+
     return (
       <div className="h-[69vb] flex justify-center text-white bg-black bg-opacity-10 backdrop-blur-sm">
         {isLoading ? (
@@ -815,10 +815,23 @@ const ChatBotPatient = () => {
       </div>
     );
   };
-  
+
+// issue 26 guide pannel
+const Guide = () => {
+  return (
+    <div>
+      <div className="h-[69vb]">
+          <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
+          <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
+              <li>Guide will appear here</li>
+          </ul>
+      </div>
+    </div>
+  );
+}
 
   const ShowPannel = () => {
-  
+
     const buttons = [
       { id: 'info', icon: <Info className="w-6 h-6" />, title: 'Instructions on how to use the simulator' },
       { id: 'chatbot', icon: <MessageSquare className="w-6 h-6" />, title: "Interact with the simulated patient's digital assistant." },
@@ -826,11 +839,11 @@ const ChatBotPatient = () => {
       { id: 'view', icon: <Eye className="w-6 h-6" />, title: 'View the simulation output or results.' },
       { id: 'retry', icon: <RefreshCw className="w-6 h-6" />, title: 'Retry simulation' },
     ];
-  
+
     const renderContent = () => {
       switch (activeButton) {
         case 'info':
-          return <InstructionPannel />
+          return <Guide />
         case 'chatbot':
           return <ChatBotPatient />;
         case 'submit':
@@ -844,7 +857,7 @@ const ChatBotPatient = () => {
           return <DefaultPannel symptomData={symptomsData} setSymptomsData={setSymptomsData}/>;
       }
     };
-  
+
     return (
       <div className="bg-gradient-to-br from-gray-900 to-gray-700">
         <div className="flex items-center p-4 text-white font-sans">
@@ -855,7 +868,7 @@ const ChatBotPatient = () => {
             <h1 className="text-2xl font-bold">Scenario Setup</h1>
           </div>
         </div>
-  
+
         <div className="flex justify-center p-4 text-white font-sans">
           {buttons.map((button) => (
             <button
@@ -871,7 +884,7 @@ const ChatBotPatient = () => {
           ))}
         </div>
         <div className="w-full h-1 bg-gradient-to-r from-transparent via-gray-900 to-transparent"></div>
-  
+
         <div className="p-4 text-white font-sans">
           {renderContent()}
         </div>
@@ -887,11 +900,11 @@ const ChatBotPatient = () => {
       <div ref={leftColRef} className="flex-shrink-0 w-full md:w-3/5 lg:w-4/6 relative ">
          {/* Inner container to control max width based on original image dimensions */}
          <div className="text-center">
-          <h1 
+          <h1
               className="text-3xl font-semibold mb-12 bg-white bg-opacity-15 inline-block p-2 backdrop-blur-[0.5px] rounded-lg border-[1px] border-white border-opacity-20"
             >
               Symptom Simulator
-            </h1> </div>      
+            </h1> </div>
             <div className="relative mx-auto" style={{ maxWidth: `${ORIGINAL_WIDTH}px` }}>
               {/* Body Diagram Image - positioned behind canvas */}
               <img
@@ -918,7 +931,7 @@ const ChatBotPatient = () => {
 
       {/* Right Column: Instructions and Info Panel */}
       <div className={`w-full md:w-2/5 lg:w-3/5 max-h-[92vh] rounded-lg border ${PANEL_BG} ${PANEL_BORDER} flex flex-col`}>
-         <div className="flex-grow overflow-y-auto"> 
+         <div className="flex-grow overflow-y-auto">
           {/* Allow scrolling if content exceeds height */}
           <ShowPannel />
          </div>
