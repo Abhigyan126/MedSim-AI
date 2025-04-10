@@ -193,15 +193,13 @@ def get_symptoms():
       "severity": out of 5,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}, also keep in mid severity should be in numbers datatype not string in json. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema}. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
         response = llm.model(prompt)
         parsed = json.loads(response)
-        validation = schema_validator.validate(parsed)
-        if validation == None:
+        if schema_validator.validate(parsed) == None:
             return jsonify(parsed)
         else:
             print(response)
-            print(validation)
             return jsonify({"error": 'generated schema not valid'})
 
     except Exception as e:
