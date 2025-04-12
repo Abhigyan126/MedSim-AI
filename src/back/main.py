@@ -12,11 +12,13 @@ from schema_validation import SchemaValidator
 from symptom_cache import SymptomCache
 from llm import LLM
 import random
+import hashlib
+import base64
 import json
 import os
 
 # constants
-SYMPTOM_DB_CACHE_THRESHOLD = 0.1 # change to 0.7
+SYMPTOM_DB_CACHE_THRESHOLD = 0.1 # change to original for deployment 0.7
 DB_PATH = 'symptom_cache.db'
 DB_CACHE_LIMIT_UNIQUE = 10
 
@@ -134,8 +136,15 @@ def login():
     if not bcrypt.check_password_hash(user["password"], data["password"]):
         return jsonify({"message": "Invalid Password", "cust_error": 40102}), 401
 
+
     access_token = create_access_token(identity=str(user["_id"]))       # Create JWT
-    response = make_response(jsonify({"message": "Login successful"}))
+    email = user["email"]
+    email_hash = hashlib.sha256(email.encode()).digest()                # Creates a Decodable token
+    session_token = base64.urlsafe_b64encode(email_hash).decode()       # Creates a Non Decodable Token
+
+    response = make_response(jsonify({"message": "Login successful",
+                                    "session_token": session_token
+                                    }))
     response.set_cookie("access_token", access_token, httponly=True, secure=False, samesite='Lax',path='/')  # Store JWT in HttpOnly cookie
     return response
 
@@ -181,8 +190,12 @@ def get_identicon():
         user_id = get_jwt_identity()                            # Extract user ID from JWT token
         mongo_key = str(ObjectId(user_id))                      # Ensure it's in ObjectId format
         svg_img = IdentIcon.generate_identicon_svg(mongo_key)
-
-        return jsonify({"svg": f"data:image/svg+xml;base64,{svg_img}"})
+        response = make_response(jsonify({
+            "svg": f"data:image/svg+xml;base64,{svg_img}"
+        }))
+        # Set cache headers - 24 hours (in seconds)
+        response.headers["Cache-Control"] = "private, max-age=86400"
+        return response
     except Exception as e:
         return jsonify({"message": "Invalid User ID", "error": str(e)}), 400
 

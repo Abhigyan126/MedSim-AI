@@ -79,7 +79,7 @@ function LoginForm() {
     setispasswordError(false);
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
-  
+
     if (emptyFields.length > 0) {
       alert(`Please fill in: ${emptyFields.join(", ")}`);
     } else if (errorMessages.length > 0) {
@@ -88,8 +88,13 @@ function LoginForm() {
       try {
         const response = await API.post("/login", JSON.stringify(formData));
         if (response.status === 200) {
-          navigate('/home');
-        } 
+          if (response.data.session_token) {
+            localStorage.setItem("session_token", response.data.session_token);
+            navigate('/home');
+          } else {
+            alert('Session token not found, Please login again \nyou may have plobrems with fetures utilising the token');
+          }
+        }
       } catch (error) {
         if (error.response) {
           if (error.response.status === 401) {
@@ -226,7 +231,7 @@ function SignupForm({ setActiveForm }) {
   async function OnSubmitSignup() {
     const emptyFields = Object.keys(formData).filter((field) => !formData[field].trim());
     const errorMessages = Object.keys(errors).filter((field) => errors[field]);
-  
+
     if (emptyFields.length > 0) {
       alert(`Please fill in: ${emptyFields.join(", ")}`);
     } else if (errorMessages.length > 0) {
@@ -311,8 +316,8 @@ function SignupForm({ setActiveForm }) {
             <p className="text-red-500 text-sm mt-1 font-bold text-center">{errors.confirmPassword}</p>
           )}
         </div>
-        <button 
-          onClick={OnSubmitSignup} 
+        <button
+          onClick={OnSubmitSignup}
           className="w-full h-12 border-2 border-black bg-white text-black text-2xl flex items-center justify-center rounded-full hover:bg-black hover:text-white"
         >
           Sign Up
@@ -335,7 +340,7 @@ function ShowLogo() {
 const Login = () => {
   const [showChat, setShowChat] = useState(false);
   const [showNavbar, setShowNavbar] = useState(false);
-  
+
   const [activeForm, setActiveForm] = useState("logo");
 
   const handleNavbarClick = () => {
@@ -360,7 +365,7 @@ const Login = () => {
       <VerticalDivider />
 
       {/* Right Side (50%) */}
-      <div className="w-1/2 flex justify-center items-center">  
+      <div className="w-1/2 flex justify-center items-center">
         <LoginButton setActiveForm={setActiveForm} />
       </div>
 

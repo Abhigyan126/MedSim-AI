@@ -38,7 +38,8 @@ class IdentIcon:
         fill_color = f"rgb({r},{g},{b})"
 
         # Background color
-        bg_color = "#EEEEEE"
+        comp_r, comp_g, comp_b = 255 - r, 255 - g, 255 - b
+        bg_color = f"rgb({comp_r},{comp_g},{comp_b})"
 
         # Ensure perfect fit: cell size must be evenly divisible
         cell_size = size // grid_size  # Ensures each cell is an integer size
