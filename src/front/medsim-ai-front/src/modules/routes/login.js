@@ -5,6 +5,13 @@ import { useNavigate } from "react-router-dom";
 import Chatbot from "../components/chatbot";
 import Sidebar from "../components/sidebar";
 
+// Handle key press onkeyDown
+const handleKeyDown = (e, callback) => {
+  if (e.key === 'Enter' && typeof callback === 'function') {
+    callback();
+  }
+};
+
 /* Vertical Divider Component */
 function VerticalDivider() {
   return (
@@ -138,7 +145,8 @@ function LoginForm() {
             className={`w-full h-12 px-4 border-2 ${ispasswordError ? 'border-red-400' : 'border-black'} rounded-full text-xl focus:outline-none pr-10`}
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
-          />
+            onKeyDown={(e) => handleKeyDown(e, OnSubmitLogin)}
+            />
           <button
             type="button"
             onClick={togglePasswordVisibility}
@@ -305,6 +313,8 @@ function SignupForm({ setActiveForm }) {
           value={formData.confirmPassword}
           onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
           onPaste={(e) => e.preventDefault()}  //disables pasting
+          onKeyDown={(e) => handleKeyDown(e, OnSubmitSignup)}
+
         />
           <button
             type="button"
