@@ -72,9 +72,13 @@ bcrypt = Bcrypt(app)
 
 # database initialisation
 app.config["MONGO_URI"] = f"mongodb+srv://{MONGO_USERNAME}:{mongo_pass}@{DB_CLUSTER}.o137pc7.mongodb.net/{DATABASE_NAME}?retryWrites=true&w=majority&appName={DB_CLUSTER}"
-mongo = PyMongo(app)
-users = mongo.db.users                                                  # Mongo Users Collection
 
+try:
+    mongo = PyMongo(app)
+    users = mongo.db.users                                                  # Mongo Users Collection
+except Exception as e:
+    print(f'Error {e},\nError Connecting to database')
+    exit()
 
 # flask api configration
 app.config["JWT_SECRET_KEY"] = secret

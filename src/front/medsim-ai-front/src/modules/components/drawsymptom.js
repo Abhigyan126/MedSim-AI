@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import "../../styles/blob.css";
 import API from "./api";
-import { Heart, Info, MessageSquare, Send, Eye, RefreshCw } from 'lucide-react';
+import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User } from 'lucide-react';
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -753,6 +753,15 @@ const ChatBotPatient = () => {
   // function for default pannel
   const DefaultPannel = ({ symptomData, setSymptomsData }) => {
     const [disease, setDisease] = useState('');
+    const [editMode, setEditMode] = useState(false);
+    const [patientInfo, setPatientInfo] = useState({
+        id: 'PT-2025-4872',
+        name: 'John Doe',
+        age: 45,
+        gender: 'Male',
+        height: '5\'10"',
+        weight: '170 lbs'
+      });
     const [isLoading, setisLoading] = useState(false);
 
     const handleSubmit = async () => {
@@ -773,10 +782,42 @@ const ChatBotPatient = () => {
       }
     };
 
+    const handleEdit = () => {
+        setEditMode(!editMode);
+      };
+
+    const handleChange = (field, value) => {
+        setPatientInfo({...patientInfo, [field]: value});
+      };
+
+    const renderField = (label, field) => {
+       return (
+         <div className="space-y-1">
+           <p className="text-blue-100 text-sm">{label}</p>
+           {editMode ? (
+             <input
+               type={field === 'age' ? 'number' : 'text'}
+               value={patientInfo[field]}
+               onChange={(e) => handleChange(field, e.target.value)}
+               className="w-full p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+             />
+           ) : (
+             <input
+               type={field === 'age' ? 'number' : 'text'}
+               value={patientInfo[field]}
+               readOnly // Make the input read-only (inactive)
+               className="w-full p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white focus:outline-none"
+               style={{ pointerEvents: 'none' }} // Disable pointer interactions
+             />
+           )}
+         </div>
+       );
+     };
+
     return (
-      <div className="h-[69vb] flex justify-center text-white bg-black bg-opacity-10 backdrop-blur-sm">
+      <div className="flex justify-center text-white bg-black bg-opacity-10 backdrop-blur-sm">
         {isLoading ? (
-          <div className="flex items-center justify-center">
+          <div className="h-[69vb] flex items-center justify-center">
             {/* Spinner from Uiverse */}
             <div className="loading inline-flex flex-col items-center justify-center"> {/* Added inline-flex and flex-col */}
             <svg width="64px" height="48px">
@@ -789,30 +830,83 @@ const ChatBotPatient = () => {
           </div>
         </div>
         ) : (
-          <div className="relative p-6 my-12 rounded-lg w-full max-w-md mx-auto overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black to-transparent opacity-5"></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black to-transparent opacity-5"></div>
-            <div className="relative z-10">
-              <div className="mb-6">
-                <label className="block text-xl font-medium text-gray-300 mb-2">
-                  Enter name of disease to simulate
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Diabetes"
-                  className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-5 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
-                  value={disease}
-                  onChange={(e) => setDisease(e.target.value)}
-                />
+          <div className="py-8 w-[100%]">
+                {/* Patient ID Card Style Layout */}
+                <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl py-4 px-5 mb-8 relative">
+                  <div className="absolute top-4 right-4">
+                    <button
+                      onClick={handleEdit}
+                      className="bg-gray-600 rounded-full p-1 translate-x-2 -translate-y-2 hover:bg-gray-400 transition-colors duration-200"
+                    >
+                      {editMode ?
+                        <Save size={16} className="text-green-300" /> :
+                        <Edit size={16} className="text-gray-300" />
+                      }
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    {/* Left Column - Avatar and ID */}
+                    <div className="w-full sm:w-1/3">
+                      {/* Virtual Person Symbol */}
+                      <div className="bg-gray-800 rounded-lg w-full aspect-square flex items-center justify-center mt-6 mb-4">
+                        <User
+                            size={90}
+                              className={`
+                                ${patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' ? 'text-blue-400' : ''}
+                                ${patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f' ? 'text-rose-400' : ''}
+                                ${!(patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' || patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f') ? 'text-gray-500' : ''}
+                          `}
+                        />
+                      </div>
+
+                      {/* Patient ID */}
+                      <div className="border-t border-gray-700 pt-3 mt-3">
+                        <p className="text-gray-400 text-sm">Patient ID</p>
+                          <p className="text-white font-mono text-xs">{patientInfo.id}</p>
+                      </div>
+                    </div>
+
+                    {/* Right Column - Detailed Info */}
+                    <div className="w-full sm:w-2/3 bg-gray-400 bg-opacity-30 rounded-lg p-4">
+                      <h2 className="text-sm font-semibold py-1 text-white mb-1 border-b border-gray-400">
+                        Patient Information {editMode && <span className="text-sm text-blue-300">(Editing)</span>}
+                      </h2>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {renderField('Full Name', 'name')}
+                        {renderField('Age', 'age')}
+                        {renderField('Gender', 'gender')}
+                        {renderField('Height', 'height')}
+                        {renderField('Weight', 'weight')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Disease Simulation Section */}
+                <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold text-white mb-4">Disease Simulator</h2>
+                  <div className="relative mb-6">
+                    <label className="block text-lg font-medium text-gray-300 mb-2">
+                      Enter name of disease to simulate
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Diabetes"
+                      className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
+                      value={disease}
+                      onChange={(e) => setDisease(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Begin Simulation
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={handleSubmit}
-                className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Begin
-              </button>
-            </div>
-          </div>
         )}
       </div>
     );
