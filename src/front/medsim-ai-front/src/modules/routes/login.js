@@ -283,6 +283,7 @@ function SignupForm({ setActiveForm }) {
             className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
+            onPaste={(e) => e.preventDefault()}  //disables pasting
           />
           <button
             type="button"
@@ -297,13 +298,14 @@ function SignupForm({ setActiveForm }) {
           )}
         </div>
         <div className="w-full relative">
-          <input
-            type={showPassword.confirmPassword ? "text" : "password"}
-            placeholder="Confirm Password"
-            className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
-            value={formData.confirmPassword}
-            onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-          />
+        <input
+          type={showPassword.confirmPassword ? "text" : "password"}
+          placeholder="Confirm Password"
+          className="w-full h-12 px-4 border-2 border-black rounded-full text-xl focus:outline-none pr-10"
+          value={formData.confirmPassword}
+          onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+          onPaste={(e) => e.preventDefault()}  //disables pasting
+        />
           <button
             type="button"
             onClick={() => togglePasswordVisibility("confirmPassword")}
