@@ -61,6 +61,8 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState(null);
+  const [messages, setMessages] = useState([]);
+
 
   // --- Helper Functions ---
 
@@ -84,7 +86,6 @@ function SymptomVisualizer({ coordinatesData = []}) {
     );
   }, []);
 
-  // --- Overlap Prevention ---
  // --- Overlap Prevention ---
  const preventOverlap = useCallback((boxes) => {
   const adjustedBoxes = [...boxes];
@@ -636,77 +637,104 @@ function SymptomVisualizer({ coordinatesData = []}) {
   }
 
 
-const ChatBotPatient = () => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const ChatBotPatient = () => {
+    const [input, setInput] = useState('');
 
-  const handleInputChange = (e) => {
-    setInput(e.target.value);
-  };
+    const handleInputChange = (e) => {
+      setInput(e.target.value);
+    };
 
-  const handleSendMessage = () => {
-    if (input.trim()) {
-      const newUserMessage = { text: input, sender: 'user' };
-      setMessages((prevMessages) => [...prevMessages, newUserMessage]);
-      setInput('');
+    const handleSendMessage = async () => {
+      if (input.trim()) {
+        const userInput = input;
+        const newUserMessage = { text: userInput, sender: 'user' };
+        setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+        setInput('');
+        // Build chat history after including the user message
+        const updatedMessages = [...messages, newUserMessage];
+        try {
+          const botReply = await generateBotResponse(userInput, updatedMessages);
+          const newBotMessage = { text: botReply, sender: 'bot' };
+          setMessages((prevMessages) => [...prevMessages, newBotMessage]);
+        } catch (error) {
+          const errorBotMessage = { text: "Sorry, something went wrong.", sender: 'bot' };
+          setMessages((prevMessages) => [...prevMessages, errorBotMessage]);
+          console.error("Bot response error:", error);
+        }
+      }
+    };
 
-      // Simulate bot response (replace with actual chatbot logic)
-      setTimeout(() => {
-        const botResponse = generateBotResponse(input);
-        const newBotMessage = { text: botResponse, sender: 'bot' };
-        setMessages((prevMessages) => [...prevMessages, newBotMessage]);
-      }, 500); // Simulate bot processing time
-    }
-  };
+    // Handle Enter key press
+    const handleKeyPress = (e) => {
+      if (e.key === 'Enter') {
+        handleSendMessage();
+      }
+    };
 
-  const generateBotResponse = (userMessage) => {
-    // Replace with your actual chatbot logic or API call
-    const lowerMessage = userMessage.toLowerCase();
+    // Generate bot response with async API call
+    const generateBotResponse = async (userMessage, chatHistory) => {
+      try {
+        const response = await API.post("/patientResponse", {
+          userResponse: userMessage,
+          symptoms: symptomsData,
+          ChatHistory: chatHistory,
+        });
+        if (response.data.message) {
+          return response.data.message;
+        } else {
+          alert("Error:", response.data.message);
+        }
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
+    };
 
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return "Hello! How can I assist you with the simulation today?";
-    } else if (lowerMessage.includes('symptoms')) {
-      return "Please describe the symptoms you'd like to simulate.";
-    } else if (lowerMessage.includes('parameters')) {
-        return "Which simulation parameters would you like to adjust?";
-    } else {
-      return "I'm still under development. Please provide more specific instructions.";
-    }
-  };
-
-  return (
-    <div className="flex flex-col h-[69vb] bg-gray-800 text-white bg-opacity-30 border-[1px] border-white border-opacity-40">
-      <div className="flex-1 overflow-y-auto p-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`mb-2 p-2 rounded-lg ${
-              message.sender === 'user' ? 'bg-blue-600 self-end' : 'bg-gray-700 self-start'
-            }`}
+    return (
+      <div className="flex flex-col h-[69vb] bg-gray-800 text-white bg-opacity-30 border border-white border-opacity-40 rounded-lg">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex flex-col max-w-3/4 ${
+                message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
+              }`}
+            >
+              <span className="text-xs opacity-70 px-2">
+                {message.sender === 'user' ? 'You' : 'Virtual Patient'}
+              </span>
+              <div
+                className={`p-3 rounded-lg ${
+                  message.sender === 'user'
+                    ? 'bg-blue-300 bg-opacity-30 text-white'
+                    : 'bg-gray-700 bg-opacity-70 text-white border border-gray-600'
+                }`}
+              >
+                {message.text}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 flex items-center border-t border-gray-700 border-opacity-50">
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            className="flex-1 bg-transparent border border-gray-600 rounded-lg p-2 text-white mr-2 focus:border-red-300 focus:outline-none"
+            placeholder="Type your message..."
+          />
+          <button
+            onClick={handleSendMessage}
+            className="rounded-full p-2 hover:bg-gray-700 transition duration-300"
+            aria-label="Send message"
           >
-            {message.text}
-          </div>
-        ))}
+            <Send className="rotate-45" />
+          </button>
+        </div>
       </div>
-
-      <div className="p-4 flex items-center">
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          className="flex-1 bg-transparent border border-gray-600 rounded-lg p-2 text-white mr-2 focus:border-red-300 focus:outline-none"
-          placeholder="Type your message..."
-        />
-        <button
-          onClick={handleSendMessage}
-          className="rounded-full p-2 hover:bg-gray-700 transition duration-300"
-        >
-          <Send className="rotate-45" />
-        </button>
-      </div>
-    </div>
-  );
-};
+    );
+  };
 
 
   const InfoPannel = () => {
