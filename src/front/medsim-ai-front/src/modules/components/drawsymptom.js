@@ -640,10 +640,48 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
   const ChatBotPatient = () => {
     const [input, setInput] = useState('');
+    const messagesEndRef = useRef(null);
+    const chatContainerRef = useRef(null);
+    const lastMessageRef = useRef(null);
 
     const handleInputChange = (e) => {
       setInput(e.target.value);
     };
+
+    // Smart scroll function that only scrolls what's needed
+    const scrollToNewestMessage = () => {
+      if (lastMessageRef.current && chatContainerRef.current) {
+        const container = chatContainerRef.current;
+        const newMessage = lastMessageRef.current;
+
+        const containerRect = container.getBoundingClientRect();
+        const newMessageRect = newMessage.getBoundingClientRect();
+
+        // Check if the new message is fully visible
+        const isFullyVisible =
+          newMessageRect.top >= containerRect.top &&
+          newMessageRect.bottom <= containerRect.bottom;
+
+        // If not fully visible, scroll just enough to show it
+        if (!isFullyVisible) {
+          // Calculate how much we need to scroll to show the bottom of the message
+          // with a small padding
+          const scrollNeeded = newMessageRect.bottom - containerRect.bottom + 20;
+
+          if (scrollNeeded > 0) {
+            // Only scroll the amount needed to bring message into view
+            container.scrollTop += scrollNeeded;
+          }
+        }
+      }
+    };
+
+    // Effect to handle scrolling when messages change
+    useEffect(() => {
+      if (messages.length > 0) {
+        scrollToNewestMessage();
+      }
+    }, [messages]);
 
     const handleSendMessage = async () => {
       if (input.trim()) {
@@ -662,13 +700,6 @@ function SymptomVisualizer({ coordinatesData = []}) {
           setMessages((prevMessages) => [...prevMessages, errorBotMessage]);
           console.error("Bot response error:", error);
         }
-      }
-    };
-
-    // Handle Enter key press
-    const handleKeyPress = (e) => {
-      if (e.key === 'Enter') {
-        handleSendMessage();
       }
     };
 
@@ -691,12 +722,24 @@ function SymptomVisualizer({ coordinatesData = []}) {
       }
     };
 
+    // Function to assign the last message ref
+    const assignLastMessageRef = (index) => {
+      if (index === messages.length - 1) {
+        return lastMessageRef;
+      }
+      return null;
+    };
+
     return (
       <div className="flex flex-col h-[69vb] bg-gray-800 text-white bg-opacity-30 border border-white border-opacity-40 rounded-lg">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4"
+        >
           {messages.map((message, index) => (
             <div
               key={index}
+              ref={assignLastMessageRef(index)}
               className={`flex flex-col max-w-3/4 ${
                 message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
               }`}
@@ -715,13 +758,15 @@ function SymptomVisualizer({ coordinatesData = []}) {
               </div>
             </div>
           ))}
+          {/* End of messages marker */}
+          <div ref={messagesEndRef} />
         </div>
         <div className="p-4 flex items-center border-t border-gray-700 border-opacity-50">
           <input
             type="text"
             value={input}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => handleKeyDown(e, handleSendMessage)}
             className="flex-1 bg-transparent border border-gray-600 rounded-lg p-2 text-white mr-2 focus:border-red-300 focus:outline-none"
             placeholder="Type your message..."
           />
@@ -736,7 +781,6 @@ function SymptomVisualizer({ coordinatesData = []}) {
       </div>
     );
   };
-
 
   const InfoPannel = () => {
     if (currentSelectedBox != null) {
@@ -927,7 +971,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
                       value={disease}
                       onChange={(e) => setDisease(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
-                      
+
                     />
                   </div>
                   <button
