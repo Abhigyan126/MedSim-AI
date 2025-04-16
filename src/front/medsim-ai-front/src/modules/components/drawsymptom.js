@@ -706,6 +706,22 @@ function SymptomVisualizer({ coordinatesData = []}) {
     // Generate bot response with async API call
     const generateBotResponse = async (userMessage, chatHistory) => {
       try {
+        if(symptomsData.length === 0){
+          return(<div>
+            <p className="text-red-200 text-bold text-center">
+              Symptom generation is necessary to enable the conversation feature. To generate symptoms, please press the refresh icon
+              <RefreshCw style={{ display: 'inline-block', verticalAlign: 'middle' }} className="w-6 h-6 px-1 text-green-200" />
+              and complete the disease form.
+            </p>
+          </div>)
+        }
+        if (messages.length >= 30) {
+          return(<div>
+            <p className="text-red-200 text-bold">
+              The conversation quota has been exceeded. Please proceed with a diagnosis based on the information collected thus far.
+            </p>
+          </div>)
+        }
         const response = await API.post("/patientResponse", {
           userResponse: userMessage,
           symptoms: symptomsData,
@@ -736,31 +752,39 @@ function SymptomVisualizer({ coordinatesData = []}) {
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto p-4 space-y-4"
         >
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              ref={assignLastMessageRef(index)}
-              className={`flex flex-col max-w-3/4 ${
-                message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
-              }`}
-            >
-              <span className="text-xs opacity-70 px-2">
-                {message.sender === 'user' ? 'You' : 'Virtual Patient'}
-              </span>
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-gray-400 h-full">
+              <p className="text-center  p-4">
+                Initiate patient interaction by entering your message in the chatbox.<div className="p-1"/><hr className="opacity-30"/> <p className="text-xs pt-2">A maximum of 15 query attempts are permitted.</p>
+              </p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
               <div
-                className={`p-3 rounded-lg ${
-                  message.sender === 'user'
-                    ? 'bg-blue-300 bg-opacity-30 text-white'
-                    : 'bg-gray-700 bg-opacity-70 text-white border border-gray-600'
+                key={index}
+                ref={assignLastMessageRef(index)}
+                className={`flex flex-col max-w-3/4 ${
+                  message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
                 }`}
               >
-                {message.text}
+                <span className="text-xs opacity-70 px-2">
+                  {message.sender === 'user' ? 'You' : 'Virtual Patient'}
+                </span>
+                <div
+                  className={`p-3 rounded-lg ${
+                    message.sender === 'user'
+                      ? 'bg-blue-300 bg-opacity-30 text-white'
+                      : 'bg-gray-700 bg-opacity-70 text-white border border-gray-600'
+                  }`}
+                >
+                  {message.text}
+                </div>
               </div>
-            </div>
-          ))}
-          {/* End of messages marker */}
+            ))
+          )}
           <div ref={messagesEndRef} />
         </div>
+
         <div className="p-4 flex items-center border-t border-gray-700 border-opacity-50">
           <input
             type="text"
@@ -1001,6 +1025,13 @@ const Guide = () => {
   );
 }
 
+// issue #37 SubmitPannel
+const ViewSubmit = () => {
+  return (<div>
+    <p>Submit Pannel</p>
+  </div>);
+}
+
   const ShowPannel = () => {
 
     const buttons = [
@@ -1018,7 +1049,7 @@ const Guide = () => {
         case 'chatbot':
           return <ChatBotPatient />;
         case 'submit':
-          return <div>Clicked on Submit.</div>;
+          return <ViewSubmit />;
         case 'view':
           return <InfoPannel />;
         case 'retry':
