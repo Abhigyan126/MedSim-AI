@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import "../../styles/blob.css";
 import API from "./api";
 import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User } from 'lucide-react';
+import { handleKeyDown } from "./handle_enter";
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -897,6 +898,8 @@ const ChatBotPatient = () => {
                       className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
                       value={disease}
                       onChange={(e) => setDisease(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
+                      
                     />
                   </div>
                   <button

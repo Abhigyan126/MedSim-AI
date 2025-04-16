@@ -4,13 +4,7 @@ import API from "../components/api";
 import { useNavigate } from "react-router-dom";
 import Chatbot from "../components/chatbot";
 import Sidebar from "../components/sidebar";
-
-// Handle key press onkeyDown
-const handleKeyDown = (e, callback) => {
-  if (e.key === 'Enter' && typeof callback === 'function') {
-    callback();
-  }
-};
+import { handleKeyDown } from "../components/handle_enter";
 
 /* Vertical Divider Component */
 function VerticalDivider() {

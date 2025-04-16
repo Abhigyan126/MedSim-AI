@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import API from "./api";
 import "../../styles/blob.css";
 import { useNavigate } from "react-router-dom";
+import { handleKeyDown } from "./handle_enter";
 
 
 const greetings = [
@@ -153,6 +154,7 @@ const Chatbot = ({ showChat, setShowChat }) => {
                         placeholder="Type a message..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, sendMessage)}
                         className="flex-1 p-1 h-8 border border-white bg-transparent text-white placeholder-white outline-none rounded-lg"
                     />
                     <button className="p-1 h-8" onClick={sendMessage}>
