@@ -16,6 +16,7 @@ import hashlib
 import base64
 import json
 import os
+from wsgiref import validate
 
 # constants
 SYMPTOM_DB_CACHE_THRESHOLD = 0.1 # change to original for deployment 0.7
@@ -42,6 +43,16 @@ sample_schema = {
     }
 }
 
+sample_schema_bot = {
+  "type": "object",
+  "required": ["message"],
+  "properties": {
+    "message": { "type": "string" }
+  },
+  "additionalProperties": False
+}
+
+
 # init Symptom Cache DB
 db_symptom_cache = SymptomCache(DB_PATH, DB_CACHE_LIMIT_UNIQUE)
 
@@ -54,6 +65,7 @@ llm = LLM()
 
 # init schema validator
 schema_validator = SchemaValidator(sample_schema)
+schema_validator_bot = SchemaValidator(sample_schema_bot)
 
 #loading variables from .env
 load_dotenv()
@@ -242,6 +254,31 @@ def get_symptoms():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+@app.route('/patientResponse', methods=['POST'])
+def PatientBot():
+    data = request.get_json()
+    symptoms = data.get("symptoms", None)
+    response = data.get("userResponse", None)
+    chatHistory = data.get("ChatHistory", None)
+    if not response:
+        return jsonify({"error": "response is required in the request body"}), 400
+    if not symptoms:
+        return jsonify({"error": "symptoms is required in the request body"}), 400
+    if not chatHistory:
+        return jsonify({"error": "symptoms is required in the request body"}), 400
+    response_schema = '''
+    {
+    message: String,
+    }
+    '''
+    prompt = f"you are a virtual patient , i will give you patient symptoms symptoms: {symptoms}, and the query from doctor please respond to the query, query: {response}, answer as patient for the query based on the symptoms, here are previous chat logs {chatHistory}. respond in the following schema and make a object message with your response, please dont reply with symptoms i only want response in message key and response as value"
+    llm_response = llm.model(prompt)
+    parsed = json.loads(llm_response)
+    validation = schema_validator_bot.validate(parsed)
+    if validation == None:
+        return jsonify(parsed)
+    else:
+        return ({"message": "Schema Not valid , please try again."})
+        print(validation)
 if __name__ == "__main__":
     app.run(debug=True)
