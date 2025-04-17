@@ -1011,19 +1011,67 @@ function SymptomVisualizer({ coordinatesData = []}) {
     );
   };
 
-// issue 26 guide pannel
+// issue #26 guide pannel
 const Guide = () => {
   return (
     <div>
-      <div className="h-[69vb]">
-          <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
-          <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
-              <li>Guide will appear here</li>
-          </ul>
+      <div className="h-[69vb] overflow-y-auto pr-2">
+        <h3 className={`font-semibold text-base mb-2 border-b pb-3 text-xl ${PANEL_BORDER}`}>How to Use:</h3>
+        <ul className="text-md list-none pl-1 space-y-3 text-gray-300 pb-3">
+
+          {/* Disease Input */}
+          <li>
+            <details className="group">
+              <summary className="cursor-pointer font-medium hover:text-white">🧪 Disease Input</summary>
+              <ul className="list-disc pl-5 mt-1 space-y-1.5">
+                <li>Enter the name of a disease in the input field to view its related symptoms.</li>
+                <li>Click the <Eye className="inline w-4 h-4 mr-1" /> <strong>Eye button</strong> to get more details about each symptom, including severity and description.</li>
+              </ul>
+            </details>
+          </li>
+
+          {/* Random Simulation */}
+          <li>
+            <details className="group">
+              <summary className="cursor-pointer font-medium hover:text-white">🎲 Random Simulation</summary>
+              <ul className="list-disc pl-5 mt-1 space-y-1.5">
+                <li>Click the <RefreshCw className="inline w-4 h-4 mr-1" /> <strong>Random button</strong> to generate a set of symptoms.</li>
+                <li>The system will predict the most likely disease based on the generated symptoms.</li>
+              </ul>
+            </details>
+          </li>
+
+          {/* Buttons Guide */}
+          <li>
+            <details className="group">
+              <summary className="cursor-pointer font-medium hover:text-white">🧭 Button Functions</summary>
+              <ul className="list-disc pl-5 mt-1 space-y-1.5">
+                <li><Info className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> View the full instruction guide.</li>
+                <li><MessageSquare className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Start a simulated conversation with the patient via chatbox.</li>
+                <li><Send className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Finalize your findings and observations.</li>
+                <li><RefreshCw className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Rerun the simulation with the same or a different disease.</li>
+              </ul>
+            </details>
+          </li>
+
+          {/* Tips & Best Practices */}
+          <li>
+            <details className="group">
+              <summary className="cursor-pointer font-medium hover:text-white">💡 Tips & Best Practices</summary>
+              <ul className="list-disc pl-5 mt-1 space-y-1.5">
+                <li>Ensure correct spelling of disease names for accurate data.</li>
+                <li>Use the chat for role-playing scenarios in training or learning environments.</li>
+                <li>Submit only after reviewing all data and concluding your diagnosis.</li>
+              </ul>
+            </details>
+          </li>
+
+        </ul>
       </div>
     </div>
   );
-}
+};
+
 
 // issue #37 SubmitPannel
 const ViewSubmit = () => {
