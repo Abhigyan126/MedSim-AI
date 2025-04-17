@@ -1027,10 +1027,57 @@ const Guide = () => {
 
 // issue #37 SubmitPannel
 const ViewSubmit = () => {
-  return (<div>
-    <p>Submit Pannel</p>
-  </div>);
-}
+  const [inputText, setInputText] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleSubmit = async () => {
+    if (!inputText.trim()) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Send data to API
+      const response = await API.post("/generateReport", {
+        userResponse: inputText,
+        symptoms: symptomsData, // Assuming symptomsData is available in scope
+        ChatHistory: messages, // Assuming chatHistory is available in scope
+      });
+      
+      console.log('Submitted successfully:', response);
+      setInputText(''); // Clear input after successful submission
+      
+    } catch (error) {
+      console.error('Error submitting response:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="h-[69vh] p-4 bg-gray-800 rounded-xl space-y-2">
+      <p className="text-blue-100 text-sm">Submit Panel</p>
+
+      <textarea
+        className="w-full h-40 p-2 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-400 resize-y max-h-[50vh]"
+        placeholder="Write something..."
+        value={inputText}
+        onChange={(e) => setInputText(e.target.value)}
+        disabled={isSubmitting}
+      ></textarea>
+
+      <div className="flex justify-center">
+        <button
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:bg-blue-400 disabled:cursor-not-allowed"
+          disabled={isSubmitting || !inputText.trim()}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </button>
+      </div>
+    </div>
+  );
+};
+//End
 
   const ShowPannel = () => {
 

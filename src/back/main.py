@@ -265,7 +265,7 @@ def PatientBot():
     if not symptoms:
         return jsonify({"error": "symptoms is required in the request body"}), 400
     if not chatHistory:
-        return jsonify({"error": "symptoms is required in the request body"}), 400
+        return jsonify({"error": "Chat History is required in the request body"}), 400
     response_schema = '''
     {
     message: String,
@@ -280,5 +280,102 @@ def PatientBot():
     else:
         return ({"message": "Schema Not valid , please try again."})
         print(validation)
+
+#Issue 37 SUbmit Button
+@app.route('/generateReport', methods=['POST'])
+def generateReport():
+    data = request.get_json()
+    symptoms = data.get("symptoms", None)
+    response = data.get("userResponse", None)
+    chatHistory = data.get("ChatHistory", None)
+    print(symptoms, response, chatHistory)
+
+    # Required field checks
+    if not response:
+        return jsonify({"error": "response is required in the request body"}), 400
+    if not symptoms:
+        return jsonify({"error": "symptoms is required in the request body"}), 400
+    if not chatHistory:
+        return jsonify({"error": "Chat History is required in the request body"}), 400
+
+    # JSON schema for validating the LLM report
+    response_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["Report"],
+        "properties": {
+            "Report": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["Result", "categories"],
+                "properties": {
+                    "Result": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["Positive", "Negative"],
+                        "properties": {
+                            "Positive": {"type": "string"},
+                            "Negative": {"type": "string"}
+                        }
+                    },
+                    "categories": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["Medical Competency", "Communication style", "Presentation Quality", "Correctly Diagnosed"],
+                        "properties": {
+                            "Medical Competency": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "properties": {
+                                    "Symptoms Relevance": {"type": "integer"},
+                                    "Clinical Reasoning": {"type": "integer"},
+                                    "RED flag identification": {"type": "integer"},
+                                    "Prescription understanding": {"type": "integer"}
+                                },
+                                "required": ["Symptoms Relevance", "Clinical Reasoning", "RED flag identification", "Prescription understanding"]
+                            },
+                            "Communication style": {"type": "integer"},
+                            "Presentation Quality": {"type": "integer"},
+                            "Correctly Diagnosed": {"type": "boolean"}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    # Construct prompt strictly as JSON including the schema and desired output structure
+    payload = {
+        "role": "strict medical professor",
+        "task": "Evaluate a doctor's message to a virtual patient and generate a structured report.",
+        "inputs": {
+            "symptoms": symptoms,
+            "doctor_response": response,
+            "chat_history": chatHistory
+        },
+        "output_schema": response_schema,
+        "output_instructions": "Return a JSON object with root key 'Report' matching the provided schema exactly"
+    }
+
+    prompt = json.dumps(payload)
+
+    # Generate LLM response
+    llm_response = llm.model(prompt)
+    print(llm_response)
+
+    try:
+        parsed = json.loads(llm_response)
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "LLM response is not valid JSON", "details": str(e)}), 500
+
+    # Validate against the strict Report schema
+    validation = schema_validator_bot.validate(parsed, schema=response_schema)
+
+    if validation is None:
+        return jsonify(parsed)
+    else:
+        print("Validation failed:", validation)
+        return jsonify({"message": "Schema not valid, please try again."}), 400
+
 if __name__ == "__main__":
     app.run(debug=True)
