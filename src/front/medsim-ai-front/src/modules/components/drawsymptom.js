@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import "../../styles/blob.css";
 import API from "./api";
-import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User } from 'lucide-react';
+import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User, Shuffle } from 'lucide-react';
 import { handleKeyDown } from "./handle_enter";
+import giveRandomDisease from "./random_disease";
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -851,6 +852,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const DefaultPannel = ({ symptomData, setSymptomsData }) => {
     const [disease, setDisease] = useState('');
     const [editMode, setEditMode] = useState(false);
+    const [isRandom, setisRandom] = useState('');
     const [patientInfo, setPatientInfo] = useState({
         id: 'PT-2025-4872',
         name: 'John Doe',
@@ -861,11 +863,11 @@ function SymptomVisualizer({ coordinatesData = []}) {
       });
     const [isLoading, setisLoading] = useState(false);
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (Disease) => {
       try {
         setisLoading(true);
         const response = await API.post('/get_symptoms', {
-          disease: disease
+          disease: Disease
         });
         if (response.data.error) {
           alert(`Error: ${response.data.error} \n please retry`);
@@ -879,6 +881,17 @@ function SymptomVisualizer({ coordinatesData = []}) {
       }
     };
 
+    const handlerandomcheck = () => {
+      if (isRandom === 'Random') {
+        const disease_random = giveRandomDisease()
+        handleSubmit(disease_random)
+        console.log('random', disease_random)
+      } else {
+        handleSubmit(disease);
+        console.log('Begin Simulation')
+      }
+    }
+
     const handleEdit = () => {
         setEditMode(!editMode);
       };
@@ -886,6 +899,14 @@ function SymptomVisualizer({ coordinatesData = []}) {
     const handleChange = (field, value) => {
         setPatientInfo({...patientInfo, [field]: value});
       };
+
+    useEffect(() => {
+        if (disease.length === 0) {
+          setisRandom('Random');
+        } else {
+          setisRandom('Begin Simulation');
+        }
+      }, [disease]);
 
     const renderField = (label, field) => {
        return (
@@ -994,15 +1015,21 @@ function SymptomVisualizer({ coordinatesData = []}) {
                       className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
                       value={disease}
                       onChange={(e) => setDisease(e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
+                      onKeyDown={(e) => handleKeyDown(e, handlerandomcheck)}
 
                     />
                   </div>
                   <button
-                    onClick={handleSubmit}
+                    onClick={handlerandomcheck}
                     className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    Begin Simulation
+                    {isRandom === 'Random' ? (
+                      <>
+                        <Shuffle className="w-4 h-4 inline-block mr-1" /> Random
+                      </>
+                    ) : isRandom === 'Begin Simulation' ? (
+                      <p>Begin Simulation</p>
+                            ) : null}
                   </button>
                 </div>
               </div>
@@ -1075,7 +1102,7 @@ const Guide = () => {
 
 // issue #37 SubmitPannel
 const ViewSubmit = () => {
-  return (<div>
+  return (<div className="h-[69vb]">
     <p>Submit Pannel</p>
   </div>);
 }
