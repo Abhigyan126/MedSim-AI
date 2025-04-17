@@ -223,6 +223,7 @@ def get_symptoms():
     try:
         data = request.get_json()
         disease = data.get("disease", None)
+        disease = disease.lower().rstrip()
         if not disease:
             return jsonify({"error": "Disease is required in the request body"}), 400
 
