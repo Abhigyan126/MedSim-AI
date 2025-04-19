@@ -1025,45 +1025,85 @@ const Guide = () => {
   );
 }
 
-// issue #37 SubmitPannel
+// issue #37 SubmitPannel -- START
 const ViewSubmit = () => {
   const [inputText, setInputText] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
+  const [reportResult, setReportResult] = React.useState(null);
+  const [submittedText, setSubmittedText] = React.useState('');
+  const [error, setError] = React.useState(null);
+  
+  // Function to get access to the context or parent variables safely
+  const getParentData = () => {
+    try {
+      return {
+        symptoms: symptomsData || null,
+        chatHistory: messages || []
+      };
+    } catch (e) {
+      console.error("Failed to access required data:", e);
+      return { symptoms: null, chatHistory: [] };
+    }
+  };
+  
   const handleSubmit = async () => {
     if (!inputText.trim()) return;
     
+    setError(null);
+    setIsSubmitting(true);
+    setSubmittedText(inputText);
+    
+    const { symptoms, chatHistory } = getParentData();
+    
+    // Validate data before sending
+    if (!symptoms) {
+      setError("Cannot access symptoms data. Please make sure you've selected a disease first.");
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
-      setIsSubmitting(true);
-      
-      // Send data to API
       const response = await API.post("/generateReport", {
         userResponse: inputText,
-        symptoms: symptomsData, // Assuming symptomsData is available in scope
-        ChatHistory: messages, // Assuming chatHistory is available in scope
+        symptoms: symptoms,
+        ChatHistory: chatHistory,
       });
       
       console.log('Submitted successfully:', response);
-      setInputText(''); // Clear input after successful submission
       
+      if (response.data && response.data.Report) {
+        setReportResult(response.data);
+        setInputText('');
+      } else if (response.data && response.data.error) {
+        setError(response.data.error || "Received invalid report format");
+      } else {
+        setError("Received invalid response from server");
+      }
     } catch (error) {
       console.error('Error submitting response:', error);
+      setError(error.message || "Failed to submit. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="h-[69vh] p-4 bg-gray-800 rounded-xl space-y-2">
+    <div className="h-[69vh] p-4 bg-gray-800 rounded-xl space-y-2 overflow-y-auto">
       <p className="text-blue-100 text-sm">Submit Panel</p>
 
       <textarea
-        className="w-full h-40 p-2 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-400 resize-y max-h-[50vh]"
+        className="w-full h-40 p-2 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-400 resize-y max-h-[30vh]"
         placeholder="Write something..."
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
         disabled={isSubmitting}
       ></textarea>
+
+      {error && (
+        <div className="bg-red-900 bg-opacity-20 p-2 rounded text-red-300 text-sm">
+          {error}
+        </div>
+      )}
 
       <div className="flex justify-center">
         <button
@@ -1074,10 +1114,77 @@ const ViewSubmit = () => {
           {isSubmitting ? 'Submitting...' : 'Submit'}
         </button>
       </div>
+
+      {/* Display submitted text if available */}
+      {submittedText && (
+        <div className="mt-4 bg-gray-600 p-3 rounded-lg">
+          <h3 className="text-sm font-medium text-blue-300 mb-2">Your Submission:</h3>
+          <div className="bg-gray-700 p-2 rounded text-white text-sm whitespace-pre-wrap">
+            {submittedText}
+          </div>
+        </div>
+      )}
+
+      {/* Display the report results */}
+      {reportResult && (
+        <div className="mt-4 bg-gray-700 p-4 rounded-lg">
+          <h3 className="text-lg font-medium text-white mb-3">Report Results</h3>
+          
+          {/* Results section */}
+          <div className="mb-4">
+            <h4 className="text-blue-300 font-medium mb-2">Results</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-green-900 bg-opacity-20 p-2 rounded">
+                <p className="text-green-300 font-medium">Positive</p>
+                <p className="text-sm text-white">{reportResult.Report.Result.Positive}</p>
+              </div>
+              <div className="bg-red-900 bg-opacity-20 p-2 rounded">
+                <p className="text-red-300 font-medium">Negative</p>
+                <p className="text-sm text-white">{reportResult.Report.Result.Negative}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Categories section */}
+          <div>
+            <h4 className="text-blue-300 font-medium mb-2">Categories</h4>
+            
+            {/* Medical Competency */}
+            <div className="mb-3">
+              <p className="text-white font-medium">Medical Competency</p>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {Object.entries(reportResult.Report.categories["Medical Competency"]).map(([key, value]) => (
+                  <div key={key} className="bg-gray-800 p-2 rounded">
+                    <p className="text-xs text-gray-400">{key}</p>
+                    <p className="text-white">{value}/10</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Other categories */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-gray-800 p-2 rounded">
+                <p className="text-xs text-gray-400">Communication Style</p>
+                <p className="text-white">{reportResult.Report.categories["Communication style"]}/10</p>
+              </div>
+              <div className="bg-gray-800 p-2 rounded">
+                <p className="text-xs text-gray-400">Presentation Quality</p>
+                <p className="text-white">{reportResult.Report.categories["Presentation Quality"]}/10</p>
+              </div>
+              <div className="bg-gray-800 p-2 rounded">
+                <p className="text-xs text-gray-400">Diagnosis</p>
+                <p className="text-white">{reportResult.Report.categories["Correctly Diagnosed"] ? "Correct" : "Incorrect"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-//End
+
+// issue #37 SubmitPannel -- END
 
   const ShowPannel = () => {
 
