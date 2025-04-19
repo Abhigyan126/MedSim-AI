@@ -3,6 +3,7 @@ import "../../styles/blob.css";
 import API from "./api";
 import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User } from 'lucide-react';
 import { handleKeyDown } from "./handle_enter";
+import BarGraph from "./bargraph";
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -63,6 +64,15 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const [scale, setScale] = useState(1);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [reportResult, setReportResult] = useState(null);
+  const [submittedText, setSubmittedText] = useState('');
+  const [ReportData, setReportData] = useState('');
+  const [isSubmitted,setIsSubmitted] = useState(false);
+  const [Fdisease, SetFdisease] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+
 
 
   // --- Helper Functions ---
@@ -754,9 +764,9 @@ function SymptomVisualizer({ coordinatesData = []}) {
         >
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-gray-400 h-full">
-              <p className="text-center  p-4">
+              <div className="text-center  p-4">
                 Initiate patient interaction by entering your message in the chatbox.<div className="p-1"/><hr className="opacity-30"/> <p className="text-xs pt-2">A maximum of 15 query attempts are permitted.</p>
-              </p>
+              </ div>
             </div>
           ) : (
             messages.map((message, index) => (
@@ -872,6 +882,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
         } else {
           setSymptomsData(response.data);
           setisLoading(false);
+          SetFdisease(disease);
           setActiveButton('info');
         }
       } catch (error) {
@@ -1027,12 +1038,10 @@ const Guide = () => {
 
 // issue #37 SubmitPannel -- START
 const ViewSubmit = () => {
-  const [inputText, setInputText] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [reportResult, setReportResult] = React.useState(null);
-  const [submittedText, setSubmittedText] = React.useState('');
-  const [error, setError] = React.useState(null);
-  
+  const [inputText, setInputText] = useState('');
+  const [error, setError] = useState(null);
+
+
   // Function to get access to the context or parent variables safely
   const getParentData = () => {
     try {
@@ -1045,139 +1054,274 @@ const ViewSubmit = () => {
       return { symptoms: null, chatHistory: [] };
     }
   };
-  
+
   const handleSubmit = async () => {
     if (!inputText.trim()) return;
-    
+
     setError(null);
     setIsSubmitting(true);
     setSubmittedText(inputText);
-    
+
     const { symptoms, chatHistory } = getParentData();
-    
+
     // Validate data before sending
     if (!symptoms) {
       setError("Cannot access symptoms data. Please make sure you've selected a disease first.");
       setIsSubmitting(false);
       return;
     }
-    
+
     try {
+      setIsSubmitting(true);
       const response = await API.post("/generateReport", {
         userResponse: inputText,
         symptoms: symptoms,
         ChatHistory: chatHistory,
+        disease: Fdisease,
       });
-      
+
       console.log('Submitted successfully:', response);
-      
+
       if (response.data && response.data.Report) {
+        console.log(response.data);
         setReportResult(response.data);
+        const datatoView = {};
+
+        if (response.data && response.data.Report && response.data.Report.Result && response.data.Report.categories) {
+          const categories = response.data.Report.categories;
+          for (const category in categories) {
+            if (categories.hasOwnProperty(category) && category === "Medical Competency") {
+              const subCategory = categories[category];
+              for (const key in subCategory) {
+                if (subCategory.hasOwnProperty(key) && typeof subCategory[key] === 'number') {
+                  datatoView[key] = subCategory[key]; // Just use the sub-key
+                }
+              }
+            }
+          }
+        }
+
+        console.log(datatoView);
+        setReportData(datatoView);
+        setIsSubmitted(true)
         setInputText('');
+        setIsSubmitting(false);
       } else if (response.data && response.data.error) {
+        setIsSubmitting(false);
         setError(response.data.error || "Received invalid report format");
       } else {
+        setIsSubmitting(false);
         setError("Received invalid response from server");
       }
     } catch (error) {
+      setIsSubmitting(false);
       console.error('Error submitting response:', error);
       setError(error.message || "Failed to submit. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="h-[69vh] p-4 bg-gray-800 rounded-xl space-y-2 overflow-y-auto">
-      <p className="text-blue-100 text-sm">Submit Panel</p>
-
-      <textarea
-        className="w-full h-40 p-2 bg-gray-700 border border-gray-600 rounded text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-400 resize-y max-h-[30vh]"
-        placeholder="Write something..."
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        disabled={isSubmitting}
-      ></textarea>
-
-      {error && (
-        <div className="bg-red-900 bg-opacity-20 p-2 rounded text-red-300 text-sm">
-          {error}
+    <div className="h-[69vh] p-5 bg-gray-800 rounded-xl overflow-hidden flex flex-col">
+      {/* Header with toggle button */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          {isSubmitted && (
+            <button
+              onClick={() => setIsSubmitted(false)}
+              className="mr-3 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition duration-200 flex items-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span className="ml-1 text-xs">Back</span>
+            </button>
+          )}
+          <h2 className="text-blue-100 font-medium">
+            {isSubmitted ? "Report Results" : "Submit Panel"}
+          </h2>
         </div>
-      )}
 
-      <div className="flex justify-center">
-        <button
-          onClick={handleSubmit}
-          className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:bg-blue-400 disabled:cursor-not-allowed"
-          disabled={isSubmitting || !inputText.trim()}
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit'}
-        </button>
+        {isSubmitting && (
+          <div className="flex items-center">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
+            <span className="text-blue-200 text-xs">Processing...</span>
+          </div>
+        )}
       </div>
 
-      {/* Display submitted text if available */}
-      {submittedText && (
-        <div className="mt-4 bg-gray-600 p-3 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-300 mb-2">Your Submission:</h3>
-          <div className="bg-gray-700 p-2 rounded text-white text-sm whitespace-pre-wrap">
-            {submittedText}
-          </div>
-        </div>
-      )}
+      {/* Conditional rendering based on isSubmitted state */}
+      {!isSubmitted ? (
+        /* Input Area */
+        <div className="flex-grow flex flex-col">
+          <textarea
+            className="w-full flex-grow p-3 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition duration-200"
+            placeholder="Write your submission here..."
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            disabled={isSubmitting}
+          ></textarea>
 
-      {/* Display the report results */}
-      {reportResult && (
-        <div className="mt-4 bg-gray-700 p-4 rounded-lg">
-          <h3 className="text-lg font-medium text-white mb-3">Report Results</h3>
-          
-          {/* Results section */}
-          <div className="mb-4">
-            <h4 className="text-blue-300 font-medium mb-2">Results</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-green-900 bg-opacity-20 p-2 rounded">
-                <p className="text-green-300 font-medium">Positive</p>
-                <p className="text-sm text-white">{reportResult.Report.Result.Positive}</p>
+          <div className="flex items-center justify-between mt-2">
+            <small className="text-gray-400 text-xs">
+              {inputText.length > 0 ? `${inputText.length} characters` : "Enter your text"}
+            </small>
+            <button
+              onClick={() => {
+                handleSubmit();
+                setIsSubmitted(true);
+              }}
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed transition duration-200 flex items-center"
+              disabled={isSubmitting || !inputText.trim()}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
+            </button>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg text-red-300 text-sm mt-4 border-l-4 border-red-500 flex items-start">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Results Area */
+        <div className="flex-grow overflow-y-auto space-y-4 pr-1">
+          {/* Submitted text section */}
+          {submittedText && (
+            <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+              <div className="flex items-center mb-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                <h3 className="text-sm font-medium text-blue-300">Your Submission</h3>
               </div>
-              <div className="bg-red-900 bg-opacity-20 p-2 rounded">
-                <p className="text-red-300 font-medium">Negative</p>
-                <p className="text-sm text-white">{reportResult.Report.Result.Negative}</p>
+              <div className="bg-gray-800 p-3 rounded-lg text-white text-sm whitespace-pre-wrap">
+                {submittedText}
               </div>
             </div>
-          </div>
-          
-          {/* Categories section */}
-          <div>
-            <h4 className="text-blue-300 font-medium mb-2">Categories</h4>
-            
-            {/* Medical Competency */}
-            <div className="mb-3">
-              <p className="text-white font-medium">Medical Competency</p>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {Object.entries(reportResult.Report.categories["Medical Competency"]).map(([key, value]) => (
-                  <div key={key} className="bg-gray-800 p-2 rounded">
-                    <p className="text-xs text-gray-400">{key}</p>
-                    <p className="text-white">{value}/10</p>
+          )}
+
+          {/* Report results section */}
+          {reportResult && (
+            <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+              <div className="flex items-center justify-between mb-4">
+                <div className="bg-gray-800 px-2 py-1 rounded-full text-xs text-gray-300">
+                  {new Date().toLocaleDateString()}
+                </div>
+              </div>
+
+              {/* Results summary section */}
+              <div className="mb-5">
+                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Analysis Results
+                </h4>
+                <div className="grid grid-cols-1 gap-3 mt-2">
+                  <div className="bg-green-900 bg-opacity-20 p-3 rounded-lg border border-green-800">
+                    <p className="text-green-300 font-medium mb-1">Positive</p>
+                    <p className="text-sm text-white">{reportResult.Report.Result.Positive}</p>
                   </div>
-                ))}
+                  <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
+                    <p className="text-red-300 font-medium mb-1">Negative</p>
+                    <p className="text-sm text-white">{reportResult.Report.Result.Negative}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Medical Competency section */}
+              <div className="mb-5">
+                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                  </svg>
+                  Medical Competency
+                </h4>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {Object.entries(reportResult.Report.categories["Medical Competency"]).map(([key, value]) => (
+                    <div key={key} className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                      <p className="text-xs text-gray-400 mb-1">{key}</p>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              value >= 8 ? 'bg-green-500' : value >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${value * 10}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-white font-medium">{value}/10</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Visualization section */}
+              <div className="mb-5">
+                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3z" clipRule="evenodd" />
+                  </svg>
+                  Performance Metrics
+                </h4>
+                <div className="w-full h-64 my-3 bg-gray-800 rounded-lg p-2 border border-gray-700">
+                  <BarGraph data={ReportData} />
+                </div>
+              </div>
+
+              {/* Additional metrics section */}
+              <div>
+                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Additional Metrics
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gray-800 py-3 px-1 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                    <p className="text-xs text-gray-400 mb-1">Communication Style</p>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
+                        <div
+                          className={`h-2 rounded-full ${
+                            reportResult.Report.categories["Communication style"] >= 8 ? 'bg-green-500' :
+                            reportResult.Report.categories["Communication style"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${reportResult.Report.categories["Communication style"] * 10}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-white font-medium">{reportResult.Report.categories["Communication style"]}/10</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                    <p className="text-xs text-gray-400 mb-1">Presentation Quality</p>
+                    <div className="flex items-center">
+                      <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
+                        <div
+                          className={`h-2 rounded-full ${
+                            reportResult.Report.categories["Presentation Quality"] >= 8 ? 'bg-green-500' :
+                            reportResult.Report.categories["Presentation Quality"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${reportResult.Report.categories["Presentation Quality"] * 10}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-white font-medium">{reportResult.Report.categories["Presentation Quality"]}/10</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                    <p className="text-xs text-gray-400 mb-3">Diagnosis</p>
+                    <p className={`text-lg font-medium ${reportResult.Report.categories["Correctly Diagnosed"] ? "text-green-400" : "text-red-400"}`}>
+                      {reportResult.Report.categories["Correctly Diagnosed"] ? "Correct" : "Incorrect"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            {/* Other categories */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-gray-800 p-2 rounded">
-                <p className="text-xs text-gray-400">Communication Style</p>
-                <p className="text-white">{reportResult.Report.categories["Communication style"]}/10</p>
-              </div>
-              <div className="bg-gray-800 p-2 rounded">
-                <p className="text-xs text-gray-400">Presentation Quality</p>
-                <p className="text-white">{reportResult.Report.categories["Presentation Quality"]}/10</p>
-              </div>
-              <div className="bg-gray-800 p-2 rounded">
-                <p className="text-xs text-gray-400">Diagnosis</p>
-                <p className="text-white">{reportResult.Report.categories["Correctly Diagnosed"] ? "Correct" : "Incorrect"}</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

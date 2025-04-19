@@ -288,15 +288,15 @@ def generateReport():
     symptoms = data.get("symptoms", None)
     response = data.get("userResponse", None)
     chatHistory = data.get("ChatHistory", None)
-    print(symptoms, response, chatHistory)
+    disease = data.get("disease", None)
 
     # Required field checks
+    if not disease:
+        return jsonify({"error": "disease is required in the request body"}), 400
     if not response:
         return jsonify({"error": "response is required in the request body"}), 400
     if not symptoms:
         return jsonify({"error": "symptoms is required in the request body"}), 400
-    if not chatHistory:
-        return jsonify({"error": "Chat History is required in the request body"}), 400
 
     # JSON schema for validating the LLM report
     response_schema = {
@@ -336,7 +336,7 @@ def generateReport():
                             },
                             "Communication style": {"type": "integer"},
                             "Presentation Quality": {"type": "integer"},
-                            "Correctly Diagnosed": {"type": "boolean"}
+                            "Correctly Diagnosed": {"type": "integer"}
                         }
                     }
                 }
@@ -346,12 +346,13 @@ def generateReport():
 
     # Construct prompt strictly as JSON including the schema and desired output structure
     payload = {
-        "role": "strict medical professor",
-        "task": "Evaluate a doctor's message to a virtual patient and generate a structured report.",
+        "role": "You are a medical professor",
+        "task": "Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback in response json correctly aligned to its respective categories.",
         "inputs": {
             "symptoms": symptoms,
             "doctor_response": response,
-            "chat_history": chatHistory
+            "chat_history": chatHistory,
+            "disease": disease,
         },
         "output_schema": response_schema,
         "output_instructions": "Return a JSON object with root key 'Report' matching the provided schema exactly"
@@ -361,7 +362,6 @@ def generateReport():
 
     # Generate LLM response
     llm_response = llm.model(prompt)
-    print(llm_response)
 
     try:
         parsed = json.loads(llm_response)
