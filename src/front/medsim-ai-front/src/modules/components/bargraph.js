@@ -138,29 +138,38 @@ export default function BarGraph({
     ctx.stroke();
 
     // Draw Y-axis grid lines and labels
-    const yTickCount = 5;
+    const yTickCount = 5; // This gives 6 ticks including 0
     ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle'; // Align text vertically
-    ctx.font = '11px sans-serif'; // Slightly smaller font
+    ctx.textBaseline = 'middle';
+    ctx.font = '11px sans-serif';
     ctx.fillStyle = textColor;
 
-    for (let i = 0; i <= yTickCount; i++) {
-      const value = (maxValue / yTickCount) * i;
-      // Prevent drawing label for 0 value if it's exactly 0 to avoid overlap with X-axis
-      if (i === 0 && maxValue === 0) continue;
+    // Calculate a nice, round number for the max tick value
+    // This ensures our tick labels will be clean values
+    const actualMaxValue = values.length > 0 ? Math.max(...values) : 100;
+    const niceMax = Math.ceil(actualMaxValue / 10) * 10; // Round up to nearest 10
 
-      const y = margin.top + graphHeight - (i / yTickCount) * graphHeight;
+    // Calculate interval between ticks - use the nice max value
+    const interval = niceMax / yTickCount;
+
+    for (let i = 0; i <= yTickCount; i++) {
+      // Use the exact interval for perfectly even spacing
+      const value = i * interval;
+
+      // Calculate y position using maxValue for proper scaling
+      const y = margin.top + graphHeight - (value / maxValue) * graphHeight;
 
       // Grid line
       ctx.beginPath();
       ctx.moveTo(margin.left, y);
       ctx.lineTo(margin.left + graphWidth, y);
       ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5; // Thinner grid lines
+      ctx.lineWidth = 0.5;
       ctx.stroke();
 
-      // Label
-      ctx.fillText(Math.round(value).toString(), margin.left - 8, y);
+      // Label - show as integer if whole number
+      const label = Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1);
+      ctx.fillText(label, margin.left - 8, y);
     }
 
     // Y-axis title
