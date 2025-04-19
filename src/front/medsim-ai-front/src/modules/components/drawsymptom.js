@@ -4,6 +4,7 @@ import API from "./api";
 import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User, Shuffle } from 'lucide-react';
 import { handleKeyDown } from "./handle_enter";
 import giveRandomDisease from "./random_disease";
+import { Search, MessageCircle, Sparkles, RotateCcw, ChevronDown } from 'lucide-react';
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
@@ -1040,61 +1041,161 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
 // issue #26 guide pannel
 const Guide = () => {
+  const journeySteps = [
+    {
+      icon: <Search className="w-10 h-10 text-blue-400" />,
+      title: "Embark on Your Quest",
+      content:
+        "Your diagnostic adventure begins here. Enter a known condition, or let fate decide with a random selection to challenge your skills.",
+    },
+    {
+      icon: <Eye className="w-10 h-10 text-purple-400" />,
+      title: "Uncover the Clues",
+      content:
+        "Observe the presenting symptoms. Some are visually mapped to the body. Delve deeper by clicking a symptom to reveal its severity and details.",
+    },
+    {
+      icon: <MessageCircle className="w-10 h-10 text-green-400" />,
+      title: "Converse with the Patient",
+      content:
+        "Engage in dialogue. You have 15 opportunities to ask crucial follow-up questions. Choose them wisely to piece together the medical puzzle.",
+    },
+    {
+      icon: <Sparkles className="w-10 h-10 text-white" />,
+      title: "Synthesize Your Findings",
+      content:
+        "The moment of truth approaches. Weave together all gathered information – symptoms, details, and conversation insights – to form your final diagnosis.",
+    },
+    {
+      icon: <RotateCcw className="w-10 h-10 text-red-400" />,
+      title: "Begin Anew",
+      content:
+        "Ready for another challenge? Hit restart to clear the slate and embark on a fresh diagnostic journey with a new mystery to solve.",
+    },
+  ];
+
+  // State to track which steps are visible
+  const [visibleSteps, setVisibleSteps] = useState({});
+  // Refs for each step element to observe
+  const stepRefs = useRef([]);
+
+  useEffect(() => {
+    // Ensure refs array is populated correctly
+    stepRefs.current = stepRefs.current.slice(0, journeySteps.length);
+
+    // Intersection Observer setup
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Mark the step as visible when it enters the viewport
+            setVisibleSteps((prev) => ({
+              ...prev,
+              [entry.target.dataset.index]: true,
+            }));
+            // Optional: Unobserve after becoming visible if you only want the animation once
+            // observer.unobserve(entry.target);
+          }
+          // Optional: Mark as not visible if it leaves the viewport (if you want fade-out)
+          // else {
+          //   setVisibleSteps((prev) => ({
+          //     ...prev,
+          //     [entry.target.dataset.index]: false,
+          //   }));
+          // }
+        });
+      },
+      {
+        root: null, // Use the viewport as the root
+        threshold: 0.3, // Trigger when 30% of the element is visible
+        rootMargin: '0px 0px -50px 0px' // Adjust margin to trigger slightly earlier/later
+      }
+    );
+
+    // Observe each step ref that exists
+    stepRefs.current.forEach((ref) => {
+      if (ref) {
+        observer.observe(ref);
+      }
+    });
+
+    // Cleanup: Disconnect observer when component unmounts
+    return () => {
+      stepRefs.current.forEach((ref) => {
+        if (ref) {
+          observer.unobserve(ref);
+        }
+      });
+      observer.disconnect();
+    };
+  }, [journeySteps.length]); // Rerun effect if number of steps changes
+
   return (
-    <div>
-      <div className="h-[69vb] overflow-y-auto pr-2">
-        <h3 className={`font-semibold text-base mb-2 border-b pb-3 text-xl ${PANEL_BORDER}`}>How to Use:</h3>
-        <ul className="text-md list-none pl-1 space-y-3 text-gray-300 pb-3">
+    // Main container with background gradient and padding
+    <div className="flex flex-col items-center w-full py-20 px-4 bg-gradient-to-b from-gray-950 via-gray-800 to-gray-950 text-white min-h-screen overflow-hidden border-[1px] border-gray-700 rounded-md">
+      {/* Optional Title for the Guide Section */}
+      <h1 className="text-4xl font-bold mb-16 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+        Your Diagnostic Journey
+      </h1>
 
-          {/* Disease Input */}
-          <li>
-            <details className="group">
-              <summary className="cursor-pointer font-medium hover:text-white">🧪 Disease Input</summary>
-              <ul className="list-disc pl-5 mt-1 space-y-1.5">
-                <li>Enter the name of a disease in the input field to view its related symptoms.</li>
-                <li>Click the <Eye className="inline w-4 h-4 mr-1" /> <strong>Eye button</strong> to get more details about each symptom, including severity and description.</li>
-              </ul>
-            </details>
-          </li>
-
-          {/* Random Simulation */}
-          <li>
-            <details className="group">
-              <summary className="cursor-pointer font-medium hover:text-white">🎲 Random Simulation</summary>
-              <ul className="list-disc pl-5 mt-1 space-y-1.5">
-                <li>Click the <RefreshCw className="inline w-4 h-4 mr-1" /> <strong>Random button</strong> to generate a set of symptoms.</li>
-                <li>The system will predict the most likely disease based on the generated symptoms.</li>
-              </ul>
-            </details>
-          </li>
-
-          {/* Buttons Guide */}
-          <li>
-            <details className="group">
-              <summary className="cursor-pointer font-medium hover:text-white">🧭 Button Functions</summary>
-              <ul className="list-disc pl-5 mt-1 space-y-1.5">
-                <li><Info className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> View the full instruction guide.</li>
-                <li><MessageSquare className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Start a simulated conversation with the patient via chatbox.</li>
-                <li><Send className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Finalize your findings and observations.</li>
-                <li><RefreshCw className="inline w-4 h-4 mr-1" /> <strong>Button:</strong> Rerun the simulation with the same or a different disease.</li>
-              </ul>
-            </details>
-          </li>
-
-          {/* Tips & Best Practices */}
-          <li>
-            <details className="group">
-              <summary className="cursor-pointer font-medium hover:text-white">💡 Tips & Best Practices</summary>
-              <ul className="list-disc pl-5 mt-1 space-y-1.5">
-                <li>Ensure correct spelling of disease names for accurate data.</li>
-                <li>Use the chat for role-playing scenarios in training or learning environments.</li>
-                <li>Submit only after reviewing all data and concluding your diagnosis.</li>
-              </ul>
-            </details>
-          </li>
-
-        </ul>
+      <div className="text-center m-24">
+        <div className="inline-block p-4 rounded-md">
+          <h2 className="text-sm mb-2 text-purple-400 font-semibold">
+            Start Exploring
+          </h2>
+          <p className="text-xs text-gray-500">
+            Scroll to discover the first step.
+          </p>
+          <div className="animate-bounce mt-4">
+            <ChevronDown className="w-6 h-6 mx-auto text-purple-400" />
+          </div>
+        </div>
       </div>
+
+      {journeySteps.map((step, index) => {
+        const isVisible = !!visibleSteps[index];
+
+        return (
+          <div
+            key={index}
+            // Assign ref and data-index for Intersection Observer
+            ref={(el) => (stepRefs.current[index] = el)}
+            data-index={index}
+            className={`flex flex-col items-center relative transition-all duration-1000 ease-out ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+            }`} // Fade-in and slide-up animation
+          >
+            {/* Render the connecting line above the step (except for the first one) */}
+            {index > 0 && (
+              <div
+                aria-hidden="true"
+                className={`h-14 w-1 bg-gradient-to-b from-blue-500/60 via-purple-500/60 to-blue-500/60 transition-opacity duration-500 delay-300 ${
+                   // Only show line if the *previous* step is visible
+                  visibleSteps[index - 1] ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            )}
+
+            {/* Step Card Content */}
+            <div
+              className="flex flex-col items-center text-center max-w-lg w-full bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-700/50"
+            >
+              <div className="mb-5 p-3 bg-gray-700/50 rounded-full shadow-inner">
+                 {/* Apply subtle animation to icon when card becomes visible */}
+                <div className={`transition-transform duration-500 ease-out ${isVisible ? 'scale-100 rotate-0' : 'scale-90 -rotate-12'}`}>
+                   {step.icon}
+                </div>
+              </div>
+              <h2 className="text-2xl font-semibold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-400">
+                {step.title}
+              </h2>
+              <p className="text-gray-300 text-base leading-relaxed">
+                {step.content}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
