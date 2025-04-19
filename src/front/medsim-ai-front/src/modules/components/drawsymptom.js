@@ -3,12 +3,9 @@ import "../../styles/blob.css";
 import API from "./api";
 import { Heart, Info, MessageSquare, Send, Eye, RefreshCw, Edit, Save, User, Shuffle } from 'lucide-react';
 import { handleKeyDown } from "./handle_enter";
-<<<<<<< HEAD
 import giveRandomDisease from "./random_disease";
 import { Search, MessageCircle, Sparkles, RotateCcw, ChevronDown } from 'lucide-react';
-=======
 import BarGraph from "./bargraph";
->>>>>>> Evaluation
 
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
