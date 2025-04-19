@@ -885,7 +885,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
         } else {
           setSymptomsData(response.data);
           setisLoading(false);
-          SetFdisease(disease);
+          SetFdisease(Disease);
           setActiveButton('info');
         }
       } catch (error) {
@@ -1511,7 +1511,7 @@ const ViewSubmit = () => {
     const buttons = [
       { id: 'info', icon: <Info className="w-6 h-6" />, title: 'Instructions on how to use the simulator' },
       { id: 'chatbot', icon: <MessageSquare className="w-6 h-6" />, title: "Interact with the simulated patient's digital assistant." },
-      { id: 'submit', icon: <Send className="w-6 h-6" />, title: 'Submit the current scenario for review.' },
+      { id: 'submit', icon: <Sparkles className="w-6 h-6" />, title: 'Submit the current scenario for review.' },
       { id: 'view', icon: <Eye className="w-6 h-6" />, title: 'View the simulation output or results.' },
       { id: 'retry', icon: <RefreshCw className="w-6 h-6" />, title: 'Retry simulation' },
     ];
