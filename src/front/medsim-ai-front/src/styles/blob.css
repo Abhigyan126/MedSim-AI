@@ -1,20 +1,20 @@
 .blob {
- 
+
   object-fit: cover;
-  
+
   /* Thick border */
   border: 4px solid grey;
-  
+
   /* Start with circle */
   border-radius: 50%;
-  
+
   /* Moderate animation */
   animation-name: blobby;
   animation-duration: 7s;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
   animation-direction: alternate;
-  
+
   /* Keep the blend mode */
   mix-blend-mode: luminosity;
 }
@@ -55,7 +55,7 @@
     box-shadow: 0 15px 55px 20px rgba(0, 0, 0, .1);
     animation: 10s warp infinite;
   }
-  
+
   @keyframes warp {
     0% {
       transform: translate(-50%, -50%) rotate(0deg);
@@ -81,7 +81,7 @@
     height: 24px; /* Adjust as needed */
     position: relative;
   }
-  
+
   .bar1, .bar2, .bar3 {
     width: 100%;
     height: 4px;
@@ -89,15 +89,15 @@
     margin: 4px 0;
     transition: 0.4s;
   }
-  
+
   /* Optional: Animation for when the icon is clicked (e.g., to an "X") */
   .burger-icon.change .bar1 {
     -webkit-transform: rotate(-45deg) translate(-9px, 6px);
     transform: rotate(-45deg) translate(-9px, 6px);
   }
-  
+
   .burger-icon.change .bar2 {opacity: 0;}
-  
+
   .burger-icon.change .bar3 {
     -webkit-transform: rotate(45deg) translate(-8px, -8px);
     transform: rotate(45deg) translate(-8px, -8px);
@@ -113,7 +113,7 @@
   background-size: 55px 55px;
 }
 
-/* From Uiverse.io by milley69 */ 
+/* From Uiverse.io by milley69 */
 .loading svg polyline {
   fill: none;
   stroke-width: 3;
@@ -142,4 +142,25 @@
   to {
     stroke-dashoffset: 0;
   }
+}
+
+.loader {
+  position: relative;
+}
+
+.loader:before , .loader:after{
+  content: '';
+  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.3) inset;
+}
+.loader:after {
+  box-shadow: 0 2px 0 pink inset;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  0% {  transform: rotate(0)}
+  100% { transform: rotate(360deg)}
 }

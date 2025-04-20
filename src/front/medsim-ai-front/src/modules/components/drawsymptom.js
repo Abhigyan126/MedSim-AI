@@ -72,6 +72,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const [isSubmitted,setIsSubmitted] = useState(false);
   const [Fdisease, SetFdisease] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChatbotLoading, setIschatbotLoading] = useState(false);
 
 
 
@@ -704,9 +705,11 @@ function SymptomVisualizer({ coordinatesData = []}) {
         // Build chat history after including the user message
         const updatedMessages = [...messages, newUserMessage];
         try {
+          setIschatbotLoading(true);
           const botReply = await generateBotResponse(userInput, updatedMessages);
           const newBotMessage = { text: botReply, sender: 'bot' };
           setMessages((prevMessages) => [...prevMessages, newBotMessage]);
+          setIschatbotLoading(false);
         } catch (error) {
           const errorBotMessage = { text: "Sorry, something went wrong.", sender: 'bot' };
           setMessages((prevMessages) => [...prevMessages, errorBotMessage]);
@@ -806,13 +809,17 @@ function SymptomVisualizer({ coordinatesData = []}) {
             className="flex-1 bg-transparent border border-gray-600 rounded-lg p-2 text-white mr-2 focus:border-red-300 focus:outline-none"
             placeholder="Type your message..."
           />
-          <button
-            onClick={handleSendMessage}
-            className="rounded-full p-2 hover:bg-gray-700 transition duration-300"
-            aria-label="Send message"
-          >
-            <Send className="rotate-45" />
-          </button>
+          {!isChatbotLoading ? (
+            <button
+              onClick={handleSendMessage}
+              className="rounded-full p-2 hover:bg-gray-700 transition duration-300"
+              aria-label="Send message"
+            >
+              <Send className="rotate-45" />
+            </button>
+          ):(
+            <div class="loader w-8 h-8 pl-2"></div>)
+          }
         </div>
       </div>
     );
