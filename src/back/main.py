@@ -436,5 +436,64 @@ def generateReport():
         print("Validation failed:", validation)
         return jsonify({"message": "Schema not valid, please try again."}), 400
 
+# funtion to get report from id
+def fetch_user_reports(action="all"):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        return jsonify({"message": "Missing token"}), 401
+
+    try:
+        decoded_token = decode_token(access_token)
+        user_id = decoded_token["sub"]
+        user_oid = ObjectId(user_id)
+
+        # Define only the fields you want to return
+        projection = {
+            "_id": 1,
+            "timestamp": 1,
+            "Symptoms Relevance": 1,
+            "Clinical Reasoning": 1,
+            "RED flag identification": 1,
+            "Prescription understanding": 1,
+            "Communication style": 1,
+            "Presentation Quality": 1,
+            "Correctly Diagnosed": 1
+        }
+
+        if action == "latest":
+            report = mongo.db.profile.find_one(
+                {"user_id": user_oid},
+                sort=[("timestamp", -1)],
+                projection=projection
+            )
+            if not report:
+                return jsonify({"message": "No report found"}), 404
+            return jsonify(report), 200
+
+        elif action == "all":
+            reports = list(mongo.db.profile.find(
+                {"user_id": user_oid},
+                projection=projection
+            ).sort("timestamp", -1))
+            if not reports:
+                return jsonify({"message": "No reports found"}), 404
+            return jsonify(reports), 200
+
+        else:
+            return jsonify({"message": f"Unsupported action: {action}"}), 400
+
+    except Exception as e:
+        return jsonify({"message": "Error processing request", "error": str(e)}), 500
+
+@app.route("/get_reports", methods=["POST"])
+@jwt_required()
+def get_reports():
+    data = request.get_json()
+    if not data or "action" not in data:
+        return jsonify({"message": "Missing 'action' in request body"}), 400
+    action = data["action"]
+    return fetch_user_reports(action)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
