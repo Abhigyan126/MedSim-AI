@@ -196,10 +196,18 @@ export default function BarGraph({
 
       const x = margin.left + i * totalBarSpacing + (totalBarSpacing - barWidth) / 2;
       const y = margin.top + graphHeight - effectiveBarHeight;
-
       // Create gradient for bar
       const baseColor = colors[i % colors.length];
-      const barGradient = ctx.createLinearGradient(x, y, x, margin.top + graphHeight);
+      function sanitize(value) {
+        return Number.isFinite(value) ? value : 0;
+      }
+
+      const safeX = sanitize(x);
+      const safeY = sanitize(y);
+      const safeTop = sanitize(margin.top);
+      const safeHeight = sanitize(graphHeight);
+
+      const barGradient = ctx.createLinearGradient(safeX, safeY, safeX, safeTop + safeHeight);
       barGradient.addColorStop(0, baseColor);
       barGradient.addColorStop(1, adjustColor(baseColor, -40)); // Darker shade at bottom
 

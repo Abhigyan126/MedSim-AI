@@ -388,7 +388,7 @@ def generateReport():
     # Construct prompt strictly as JSON including the schema and desired output structure
     payload = {
         "role": "You are a medical professor",
-        "task": "Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10.",
+        "task": "Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10. the symptoms provided are by the paitent and not by the doctor so use it as a reference to gudge doctor work in identifying disease using the symptoms",
         "inputs": {
             "symptoms": symptoms,
             "doctor_response": response,
