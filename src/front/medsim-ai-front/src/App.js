@@ -7,6 +7,7 @@ import Profile from './modules/routes/profile';
 import Simulator from './modules/routes/symptom';
 import About from './modules/routes/about';
 import DiseaseCraft from './modules/routes/diseaseCraft';
+import SymptomTree from './modules/routes/symptomtree';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path='/logout' element={<Logout />} />
         <Route path='/profile' element={<Profile />} />
         <Route path='/about' element={<About />} />
+        <Route path='/symptomtree' element={<SymptomTree />} />
         <Route path='/diseaseCraft' element={<DiseaseCraft />} />
         <Route path='/symptom-simulator' element={<Simulator />} />
         </Routes>

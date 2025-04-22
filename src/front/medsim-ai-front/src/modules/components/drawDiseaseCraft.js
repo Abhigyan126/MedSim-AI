@@ -554,7 +554,7 @@ export default function MedicalEmbeddings() {
                     {gameStatus === 'win' && (
                       <div className="text-green-600 font-medium mt-2 flex items-center justify-center text-sm animate-bounce">
                         <span className="text-2xl mr-2">🏆</span>
-                        Perfect! You created the correct treatment!
+                        Perfect! You created the correct disease!
                       </div>
                     )}
                      {prediction && prediction.disease !== targetDisease && selectedSymptoms.length > 0 && gameStatus !== 'win' && (
