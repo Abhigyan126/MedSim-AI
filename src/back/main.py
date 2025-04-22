@@ -11,6 +11,8 @@ from identity_icon import IdentIcon
 from schema_validation import SchemaValidator
 from symptom_cache import SymptomCache
 from llm import LLM
+from datetime import datetime
+import datetime
 import random
 import hashlib
 import base64
@@ -87,7 +89,8 @@ app.config["MONGO_URI"] = f"mongodb+srv://{MONGO_USERNAME}:{mongo_pass}@{DB_CLUS
 
 try:
     mongo = PyMongo(app)
-    users = mongo.db.users                                                  # Mongo Users Collection
+    users = mongo.db.users  # Mongo Users Collection
+    profile = mongo.db.profile
 except Exception as e:
     print(f'Error {e},\nError Connecting to database')
     exit()
@@ -216,6 +219,7 @@ def get_identicon():
         return jsonify({"message": "Invalid User ID", "error": str(e)}), 400
 
 @app.route('/get_symptoms', methods=['POST'])
+@jwt_required()
 def get_symptoms():
     """
     Fetches Symptoms for a given dieses
@@ -256,6 +260,7 @@ def get_symptoms():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/patientResponse', methods=['POST'])
+@jwt_required()
 def PatientBot():
     data = request.get_json()
     symptoms = data.get("symptoms", None)
@@ -282,8 +287,43 @@ def PatientBot():
         return ({"message": "Schema Not valid , please try again."})
         print(validation)
 
+def flatten_report(report):
+    flat = {}
+
+    categories = report["categories"]
+    med_comp = categories["Medical Competency"]
+
+    flat["Symptoms Relevance"] = med_comp["Symptoms Relevance"]
+    flat["Clinical Reasoning"] = med_comp["Clinical Reasoning"]
+    flat["RED flag identification"] = med_comp["RED flag identification"]
+    flat["Prescription understanding"] = med_comp["Prescription understanding"]
+
+    flat["Communication style"] = categories["Communication style"]
+    flat["Presentation Quality"] = categories["Presentation Quality"]
+    flat["Correctly Diagnosed"] = categories["Correctly Diagnosed"]
+
+    return flat
+
+def get_user_email_id_info_from_jwt():
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        raise ValueError("Missing token")
+
+    try:
+        decoded_token = decode_token(access_token)
+        user_id = decoded_token["sub"]
+        user = users.find_one({"_id": ObjectId(user_id)}, {"username": 1, "email": 1})
+        if not user:
+            raise LookupError("User not found")
+        return user_id, user["username"], user["email"]
+    except Exception as e:
+        raise ValueError(f"Invalid token: {str(e)}")
+
+
+
 #Issue 37 SUbmit Button
 @app.route('/generateReport', methods=['POST'])
+@jwt_required()
 def generateReport():
     data = request.get_json()
     symptoms = data.get("symptoms", None)
@@ -373,10 +413,87 @@ def generateReport():
     validation = schema_validator_bot.validate(parsed, schema=response_schema)
 
     if validation is None:
+        try:
+            user_id, username, email = get_user_email_id_info_from_jwt()
+        except ValueError as e:
+            return jsonify({"message": str(e)}), 401
+        except LookupError as e:
+            return jsonify({"message": str(e)}), 404
+
+        report_data = parsed.get("Report", {})
+        flat_report = flatten_report(report_data)
+
+        log_entry = {
+            "user_id": ObjectId(user_id),
+            "email": email,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc),
+            **flat_report  # unpack the flattened report directly into the doc
+        }
+
+        mongo.db.profile.insert_one(log_entry)
         return jsonify(parsed)
     else:
         print("Validation failed:", validation)
         return jsonify({"message": "Schema not valid, please try again."}), 400
+
+# funtion to get report from id
+def fetch_user_reports(action="all"):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        return jsonify({"message": "Missing token"}), 401
+
+    try:
+        decoded_token = decode_token(access_token)
+        user_id = decoded_token["sub"]
+        user_oid = ObjectId(user_id)
+
+        # Define only the fields you want to return
+        projection = {
+            "_id": 1,
+            "timestamp": 1,
+            "Symptoms Relevance": 1,
+            "Clinical Reasoning": 1,
+            "RED flag identification": 1,
+            "Prescription understanding": 1,
+            "Communication style": 1,
+            "Presentation Quality": 1,
+            "Correctly Diagnosed": 1
+        }
+
+        if action == "latest":
+            report = mongo.db.profile.find_one(
+                {"user_id": user_oid},
+                sort=[("timestamp", -1)],
+                projection=projection
+            )
+            if not report:
+                return jsonify({"message": "No report found"}), 404
+            return jsonify(report), 200
+
+        elif action == "all":
+            reports = list(mongo.db.profile.find(
+                {"user_id": user_oid},
+                projection=projection
+            ).sort("timestamp", -1))
+            if not reports:
+                return jsonify({"message": "No reports found"}), 404
+            return jsonify(reports), 200
+
+        else:
+            return jsonify({"message": f"Unsupported action: {action}"}), 400
+
+    except Exception as e:
+        return jsonify({"message": "Error processing request", "error": str(e)}), 500
+
+@app.route("/get_reports", methods=["POST"])
+@jwt_required()
+def get_reports():
+    data = request.get_json()
+    if not data or "action" not in data:
+        return jsonify({"message": "Missing 'action' in request body"}), 400
+    action = data["action"]
+    return fetch_user_reports(action)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -6,6 +6,7 @@ import Logout from './modules/routes/logout';
 import Profile from './modules/routes/profile';
 import Simulator from './modules/routes/symptom';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import About from './modules/routes/about';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path='/login' element={<Login />} />
         <Route path='/logout' element={<Logout />} />
         <Route path='/profile' element={<Profile />} />
+        <Route path='/about' element={<About />} />
         <Route path='/symptom-simulator' element={<Simulator />} />
         </Routes>
     </Router>

@@ -30,7 +30,7 @@ const Sidebar = ({ username="?" , name="?" }) => {
         { label: "Profile", icon: <User size={22} />, action: () => navigate('/profile') },
         { label: "Home", icon: <Home size={22} />, action: () => navigate('/home') },
         { label: "Login", icon: <LogIn size={22} />, action: () => navigate('/login') },
-        { label: "About Us", icon: <Info size={22} />, action: () => console.log("About clicked") },
+        { label: "About Us", icon: <Info size={22} />, action: () => navigate('/about') },
         { label: "Symptom Simulator", icon: <img src='images/simulation_icon.png' title='Symptom Simulator' alt='simulation' className='w-6 h-6'/>, action: () => navigate('/symptom-simulator') },
       ];
 

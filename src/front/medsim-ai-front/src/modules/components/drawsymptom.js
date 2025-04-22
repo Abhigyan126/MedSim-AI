@@ -7,6 +7,8 @@ import giveRandomDisease from "./random_disease";
 import { Search, MessageCircle, Sparkles, RotateCcw, ChevronDown } from 'lucide-react';
 import BarGraph from "./bargraph";
 
+
+
 // --- Constants ---
 const ORIGINAL_WIDTH = 900;
 const ORIGINAL_HEIGHT = 550;
@@ -1342,6 +1344,7 @@ const ViewSubmit = () => {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isSubmitting}
+            onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
           ></textarea>
 
           <div className="flex items-center justify-between mt-2">
