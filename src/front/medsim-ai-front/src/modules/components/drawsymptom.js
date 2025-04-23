@@ -1616,7 +1616,7 @@ const ViewSubmit = () => {
       </div>
 
       {/* Right Column: Instructions and Info Panel */}
-      <div className={`w-full md:w-2/5 lg:w-3/5 max-h-[93vh] rounded-lg border ${PANEL_BG} ${PANEL_BORDER} flex flex-col`}>
+      <div className={`w-full md:w-2/5 lg:w-3/5 max-h-[92vh] rounded-lg border ${PANEL_BG} ${PANEL_BORDER} flex flex-col`}>
          <div className="flex-grow overflow-y-auto">
           {/* Allow scrolling if content exceeds height */}
           <ShowPannel />
