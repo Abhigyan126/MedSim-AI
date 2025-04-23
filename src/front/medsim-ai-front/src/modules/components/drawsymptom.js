@@ -28,21 +28,21 @@ const HOVER_BORDER_COLOR_DARK = "#9CA3AF"; // Gray-400
 
 // Adjusted Severity Colors for Dark Background (Brighter/Higher Contrast)
 const SEVERITY_COLORS_DARK = [
-    "rgba(180, 180, 90, 0.9)",  // Softer Yellow (1)
-    "rgba(200, 140, 70, 0.9)",  // Softer Orange (2)
-    "rgba(180, 90, 50, 0.9)",   // Softer Red-Orange (3)
-    "rgba(160, 50, 50, 0.9)",   // Softer Red (4)
-    "rgba(140, 40, 40, 0.9)",   // Softer Dark Red (5)
+  "rgba(180, 180, 90, 0.9)",  // Softer Yellow (1)
+  "rgba(200, 140, 70, 0.9)",  // Softer Orange (2)
+  "rgba(180, 90, 50, 0.9)",   // Softer Red-Orange (3)
+  "rgba(160, 50, 50, 0.9)",   // Softer Red (4)
+  "rgba(140, 40, 40, 0.9)",   // Softer Dark Red (5)
 ];
 
 
 // Star colors matching severity for better visual cue
 const SEVERITY_STAR_COLORS_DARK = [
-    "#FFD700", // **Gold (More Visible)**
-    "#FFB347", // **Soft Golden Orange**
-    "#FF6F61", // **Salmon Pink (Balanced)**
-    "#FF3B3B", // **Bright Red**
-    "#C53030", // **Deep Blood Red**
+  "#FFD700", // **Gold (More Visible)**
+  "#FFB347", // **Soft Golden Orange**
+  "#FF6F61", // **Salmon Pink (Balanced)**
+  "#FF3B3B", // **Bright Red**
+  "#C53030", // **Deep Blood Red**
 ];
 
 const MAX_OVERLAP_ADJUST_ATTEMPTS = 50;
@@ -55,7 +55,7 @@ const NO_SPAWN_ZONE_RIGHT = NO_SPAWN_ZONE_LEFT + NO_SPAWN_ZONE_WIDTH;
 const NO_SPAWN_ZONE_PUSH_MARGIN = 15; // How far to push away from the zone edge
 
 
-function SymptomVisualizer({ coordinatesData = []}) {
+function SymptomVisualizer({ coordinatesData = [] }) {
   const [symptomsData, setSymptomsData] = useState([]);
   const [activeButton, setActiveButton] = useState(null); // states: info chatbot submit view
   const canvasRef = useRef(null);
@@ -71,10 +71,11 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const [reportResult, setReportResult] = useState(null);
   const [submittedText, setSubmittedText] = useState('');
   const [ReportData, setReportData] = useState('');
-  const [isSubmitted,setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [Fdisease, SetFdisease] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChatbotLoading, setIschatbotLoading] = useState(false);
+  const [patientInfo_, setPatientInfo_] = useState({});
 
 
 
@@ -87,10 +88,10 @@ function SymptomVisualizer({ coordinatesData = []}) {
     return SEVERITY_COLORS_DARK[index];
   }, []);
 
-   const getStarColorBySeverity = useCallback((severity) => {
-      const index = Math.min(Math.max(Math.floor(severity || 1) - 1, 0), SEVERITY_STAR_COLORS_DARK.length - 1);
-      return SEVERITY_STAR_COLORS_DARK[index];
-   }, []);
+  const getStarColorBySeverity = useCallback((severity) => {
+    const index = Math.min(Math.max(Math.floor(severity || 1) - 1, 0), SEVERITY_STAR_COLORS_DARK.length - 1);
+    return SEVERITY_STAR_COLORS_DARK[index];
+  }, []);
 
   const boxesOverlap = useCallback((box1, box2) => {
     const buffer = 2;
@@ -102,19 +103,19 @@ function SymptomVisualizer({ coordinatesData = []}) {
     );
   }, []);
 
- // --- Overlap Prevention ---
- const preventOverlap = useCallback((boxes) => {
-  const adjustedBoxes = [...boxes];
-  let changed = true;
-  let loops = 0;
-  // Increase max loops slightly as adjustments might be more complex
-  const MAX_LOOPS = (MAX_OVERLAP_ADJUST_ATTEMPTS || 10) * adjustedBoxes.length * 1.5;
-  const VERTICAL_BIAS_FACTOR = 0.3; // How much vertical push to add for horizontal overlaps (0 to 1)
-  const SIDE_PUSH_FACTOR = 1.1; // Multiplier for horizontal push near center (1 = no change)
-  const CENTER_ZONE_WIDTH_RATIO = 0.3; // How much of the center width triggers side push (e.g., 30%)
+  // --- Overlap Prevention ---
+  const preventOverlap = useCallback((boxes) => {
+    const adjustedBoxes = [...boxes];
+    let changed = true;
+    let loops = 0;
+    // Increase max loops slightly as adjustments might be more complex
+    const MAX_LOOPS = (MAX_OVERLAP_ADJUST_ATTEMPTS || 10) * adjustedBoxes.length * 1.5;
+    const VERTICAL_BIAS_FACTOR = 0.3; // How much vertical push to add for horizontal overlaps (0 to 1)
+    const SIDE_PUSH_FACTOR = 1.1; // Multiplier for horizontal push near center (1 = no change)
+    const CENTER_ZONE_WIDTH_RATIO = 0.3; // How much of the center width triggers side push (e.g., 30%)
 
-  // Helper to constrain a box position, respecting bounds and no-spawn zone
-  const constrainBoxPosition = (box) => {
+    // Helper to constrain a box position, respecting bounds and no-spawn zone
+    const constrainBoxPosition = (box) => {
       const clampedX = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, box.x));
       const clampedY = Math.max(0, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT, box.y));
       let finalX = clampedX;
@@ -123,109 +124,108 @@ function SymptomVisualizer({ coordinatesData = []}) {
       // Apply No-Spawn Zone constraint *after* clamping to general bounds
       const boxRightEdge = finalX + BOX_WIDTH;
       if (NO_SPAWN_ZONE_LEFT !== undefined && NO_SPAWN_ZONE_RIGHT !== undefined && boxRightEdge > NO_SPAWN_ZONE_LEFT && finalX < NO_SPAWN_ZONE_RIGHT) {
-           const boxCenterX = finalX + BOX_WIDTH / 2;
-           const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
+        const boxCenterX = finalX + BOX_WIDTH / 2;
+        const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
 
-           // Push out towards the *nearest* edge of the no-spawn zone
-           if (boxCenterX < (NO_SPAWN_ZONE_LEFT + NO_SPAWN_ZONE_RIGHT) / 2) {
-                // Closer to left edge of zone
-                finalX = NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin;
-           } else {
-                // Closer to right edge of zone
-                finalX = NO_SPAWN_ZONE_RIGHT + pushMargin;
-           }
-           // Re-clamp X after potential push, ensuring it stays within canvas
-           finalX = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, finalX));
+        // Push out towards the *nearest* edge of the no-spawn zone
+        if (boxCenterX < (NO_SPAWN_ZONE_LEFT + NO_SPAWN_ZONE_RIGHT) / 2) {
+          // Closer to left edge of zone
+          finalX = NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin;
+        } else {
+          // Closer to right edge of zone
+          finalX = NO_SPAWN_ZONE_RIGHT + pushMargin;
+        }
+        // Re-clamp X after potential push, ensuring it stays within canvas
+        finalX = Math.max(0, Math.min(ORIGINAL_WIDTH - BOX_WIDTH, finalX));
       }
 
       return { ...box, x: finalX, y: finalY };
-  };
+    };
 
 
-  while (changed && loops < MAX_LOOPS) {
-    changed = false;
-    loops++;
-    // --- Standard Overlap Resolution ---
-    for (let i = 0; i < adjustedBoxes.length; i++) {
-      for (let j = i + 1; j < adjustedBoxes.length; j++) {
-        if (boxesOverlap(adjustedBoxes[i], adjustedBoxes[j])) {
-          changed = true;
-          const boxI = adjustedBoxes[i];
-          const boxJ = adjustedBoxes[j];
+    while (changed && loops < MAX_LOOPS) {
+      changed = false;
+      loops++;
+      // --- Standard Overlap Resolution ---
+      for (let i = 0; i < adjustedBoxes.length; i++) {
+        for (let j = i + 1; j < adjustedBoxes.length; j++) {
+          if (boxesOverlap(adjustedBoxes[i], adjustedBoxes[j])) {
+            changed = true;
+            const boxI = adjustedBoxes[i];
+            const boxJ = adjustedBoxes[j];
 
-          const dx = (boxJ.x + BOX_WIDTH / 2) - (boxI.x + BOX_WIDTH / 2);
-          const dy = (boxJ.y + BOX_HEIGHT / 2) - (boxI.y + BOX_HEIGHT / 2);
-          const distance = Math.sqrt(dx * dx + dy * dy) || 1; // Prevent division by zero
+            const dx = (boxJ.x + BOX_WIDTH / 2) - (boxI.x + BOX_WIDTH / 2);
+            const dy = (boxJ.y + BOX_HEIGHT / 2) - (boxI.y + BOX_HEIGHT / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1; // Prevent division by zero
 
-          // Calculate base movement vector normalized
-          let normX = dx / distance;
-          let normY = dy / distance;
+            // Calculate base movement vector normalized
+            let normX = dx / distance;
+            let normY = dy / distance;
 
-          // --- Add Vertical Bias to break horizontal lines ---
-          // If movement is mostly horizontal, add a small vertical component
-          if (Math.abs(normX) > 0.85) { // Check if vectors are mostly horizontal
-               const verticalNudge = (Math.random() < 0.5 ? 1 : -1) * VERTICAL_BIAS_FACTOR;
-               // Adjust normY and re-normalize (approximately)
-               normY += verticalNudge;
-               const newMag = Math.sqrt(normX*normX + normY*normY) || 1;
-               normX /= newMag;
-               normY /= newMag;
+            // --- Add Vertical Bias to break horizontal lines ---
+            // If movement is mostly horizontal, add a small vertical component
+            if (Math.abs(normX) > 0.85) { // Check if vectors are mostly horizontal
+              const verticalNudge = (Math.random() < 0.5 ? 1 : -1) * VERTICAL_BIAS_FACTOR;
+              // Adjust normY and re-normalize (approximately)
+              normY += verticalNudge;
+              const newMag = Math.sqrt(normX * normX + normY * normY) || 1;
+              normX /= newMag;
+              normY /= newMag;
+            }
+
+            // Calculate the actual movement distance
+            let moveAmount = OVERLAP_ADJUST_STEP;
+
+            // --- Add Side Clinging Bias (Push outwards from center) ---
+            const centerZoneLeft = ORIGINAL_WIDTH * (0.5 - CENTER_ZONE_WIDTH_RATIO / 2);
+            const centerZoneRight = ORIGINAL_WIDTH * (0.5 + CENTER_ZONE_WIDTH_RATIO / 2);
+            const boxICenterX = boxI.x + BOX_WIDTH / 2;
+            const boxJCenterX = boxJ.x + BOX_WIDTH / 2;
+
+            // If either box is significantly in the central zone
+            if ((boxICenterX > centerZoneLeft && boxICenterX < centerZoneRight) ||
+              (boxJCenterX > centerZoneLeft && boxJCenterX < centerZoneRight)) {
+              // Increase the horizontal component of the push slightly
+              // This makes them move more left/right when resolving overlaps in the middle
+              if (Math.abs(normX) > 0.1) { // Only if there's some horizontal component already
+                normX *= SIDE_PUSH_FACTOR;
+                // Re-normalize (approximately) after bias
+                const biasedMag = Math.sqrt(normX * normX + normY * normY) || 1;
+                normX /= biasedMag;
+                normY /= biasedMag;
+              }
+            }
+
+
+            // Apply calculated movement based on final normalized direction and step
+            const moveX = normX * moveAmount;
+            const moveY = normY * moveAmount;
+
+            // Apply movement tentatively
+            adjustedBoxes[i].x -= moveX / 2;
+            adjustedBoxes[i].y -= moveY / 2;
+            adjustedBoxes[j].x += moveX / 2;
+            adjustedBoxes[j].y += moveY / 2;
+
+            // Apply constraints immediately after adjusting a pair
+            adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
+            adjustedBoxes[j] = constrainBoxPosition(adjustedBoxes[j]);
           }
-
-          // Calculate the actual movement distance
-          let moveAmount = OVERLAP_ADJUST_STEP;
-
-          // --- Add Side Clinging Bias (Push outwards from center) ---
-          const centerZoneLeft = ORIGINAL_WIDTH * (0.5 - CENTER_ZONE_WIDTH_RATIO / 2);
-          const centerZoneRight = ORIGINAL_WIDTH * (0.5 + CENTER_ZONE_WIDTH_RATIO / 2);
-          const boxICenterX = boxI.x + BOX_WIDTH / 2;
-          const boxJCenterX = boxJ.x + BOX_WIDTH / 2;
-
-          // If either box is significantly in the central zone
-          if ((boxICenterX > centerZoneLeft && boxICenterX < centerZoneRight) ||
-              (boxJCenterX > centerZoneLeft && boxJCenterX < centerZoneRight))
-          {
-               // Increase the horizontal component of the push slightly
-               // This makes them move more left/right when resolving overlaps in the middle
-               if (Math.abs(normX) > 0.1) { // Only if there's some horizontal component already
-                    normX *= SIDE_PUSH_FACTOR;
-                    // Re-normalize (approximately) after bias
-                    const biasedMag = Math.sqrt(normX*normX + normY*normY) || 1;
-                    normX /= biasedMag;
-                    normY /= biasedMag;
-               }
-          }
-
-
-          // Apply calculated movement based on final normalized direction and step
-          const moveX = normX * moveAmount;
-          const moveY = normY * moveAmount;
-
-          // Apply movement tentatively
-          adjustedBoxes[i].x -= moveX / 2;
-          adjustedBoxes[i].y -= moveY / 2;
-          adjustedBoxes[j].x += moveX / 2;
-          adjustedBoxes[j].y += moveY / 2;
-
-          // Apply constraints immediately after adjusting a pair
-          adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
-          adjustedBoxes[j] = constrainBoxPosition(adjustedBoxes[j]);
         }
       }
     }
-  }
 
-   // Final constraint pass after all loops (safety net)
-   for (let i = 0; i < adjustedBoxes.length; i++) {
-         adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
-   }
+    // Final constraint pass after all loops (safety net)
+    for (let i = 0; i < adjustedBoxes.length; i++) {
+      adjustedBoxes[i] = constrainBoxPosition(adjustedBoxes[i]);
+    }
 
-  if (loops >= MAX_LOOPS) {
-     console.warn("Overlap prevention iteration limit reached. Layout might not be optimal.");
-  }
-  return adjustedBoxes;
-  // Ensure necessary constants are available in scope (e.g., NO_SPAWN_ZONE_LEFT/RIGHT/PUSH_MARGIN, OVERLAP_ADJUST_STEP, BOX_WIDTH/HEIGHT, ORIGINAL_WIDTH/HEIGHT)
-}, [boxesOverlap]); // Add dependencies like NO_SPAWN_ZONE constants if they are props/state
+    if (loops >= MAX_LOOPS) {
+      console.warn("Overlap prevention iteration limit reached. Layout might not be optimal.");
+    }
+    return adjustedBoxes;
+    // Ensure necessary constants are available in scope (e.g., NO_SPAWN_ZONE_LEFT/RIGHT/PUSH_MARGIN, OVERLAP_ADJUST_STEP, BOX_WIDTH/HEIGHT, ORIGINAL_WIDTH/HEIGHT)
+  }, [boxesOverlap]); // Add dependencies like NO_SPAWN_ZONE constants if they are props/state
 
   // --- Initialization Effect ---
   useEffect(() => {
@@ -241,13 +241,13 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
     // --- Group symptoms by location to handle initial placement ---
     const symptomsByLocation = symptomsData.reduce((acc, symptom, index) => {
-        const locKey = symptom.location?.toLowerCase() || 'unknown_location';
-        if (!acc[locKey]) {
-            acc[locKey] = [];
-        }
-        // Store the original symptom data along with its index
-        acc[locKey].push({ ...symptom, originalIndex: index });
-        return acc;
+      const locKey = symptom.location?.toLowerCase() || 'unknown_location';
+      if (!acc[locKey]) {
+        acc[locKey] = [];
+      }
+      // Store the original symptom data along with its index
+      acc[locKey].push({ ...symptom, originalIndex: index });
+      return acc;
     }, {});
 
     const initialBoxes = [];
@@ -278,7 +278,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
       const numBoxesInGroup = group.length;
       // Calculate spread angle based on number of boxes, capped between MIN and MAX
       const totalAngle = Math.min(MAX_ANGLE_SPREAD, Math.max(MIN_ANGLE_SPREAD, numBoxesInGroup * (Math.PI / 6))); // Adjust multiplier as needed
-      const angleStep = numBoxesInGroup > 1 ? totalAngle / (numBoxesInGroup -1 ) : 0;
+      const angleStep = numBoxesInGroup > 1 ? totalAngle / (numBoxesInGroup - 1) : 0;
       // Start angle slightly offset to center the arc (e.g., pointing upwards/outwards)
       const startAngle = -Math.PI / 2 - totalAngle / 2;
 
@@ -294,7 +294,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
           // Multiple boxes: Spread them in an arc around the base point
           const angle = startAngle + (index * angleStep);
           const offsetX = Math.cos(angle) * radius;
-          const offsetY = Math.sin(angle) * radius - BOX_HEIGHT/2; // Apply offset relative to base, slightly raise the center
+          const offsetY = Math.sin(angle) * radius - BOX_HEIGHT / 2; // Apply offset relative to base, slightly raise the center
 
           initialPosX = baseX + offsetX - BOX_WIDTH / 2;
           initialPosY = baseY + offsetY;
@@ -304,14 +304,14 @@ function SymptomVisualizer({ coordinatesData = []}) {
         let adjustedPosX = initialPosX;
         const boxRightEdge = initialPosX + BOX_WIDTH;
         if (NO_SPAWN_ZONE_LEFT !== undefined && NO_SPAWN_ZONE_RIGHT !== undefined && boxRightEdge > NO_SPAWN_ZONE_LEFT && initialPosX < NO_SPAWN_ZONE_RIGHT) {
-            const boxCenterX = initialPosX + BOX_WIDTH / 2;
-            const pushDirection = (boxCenterX < ORIGINAL_WIDTH / 2) ? -1 : 1; // -1 left, 1 right
-            const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
-            const randomPush = Math.floor(Math.random() * 15); // Reduced randomness
+          const boxCenterX = initialPosX + BOX_WIDTH / 2;
+          const pushDirection = (boxCenterX < ORIGINAL_WIDTH / 2) ? -1 : 1; // -1 left, 1 right
+          const pushMargin = NO_SPAWN_ZONE_PUSH_MARGIN !== undefined ? NO_SPAWN_ZONE_PUSH_MARGIN : 5;
+          const randomPush = Math.floor(Math.random() * 15); // Reduced randomness
 
-            adjustedPosX = (pushDirection === -1)
-               ? NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin - randomPush
-               : NO_SPAWN_ZONE_RIGHT + pushMargin + randomPush;
+          adjustedPosX = (pushDirection === -1)
+            ? NO_SPAWN_ZONE_LEFT - BOX_WIDTH - pushMargin - randomPush
+            : NO_SPAWN_ZONE_RIGHT + pushMargin + randomPush;
         }
         // --- End: No Spawn Zone Adjustment ---
 
@@ -364,18 +364,18 @@ function SymptomVisualizer({ coordinatesData = []}) {
     const currentLeftColRef = leftColRef.current; // Store the current ref value
 
     if (window.ResizeObserver && currentLeftColRef) {
-        resizeObserver = new ResizeObserver(handleResize);
-        resizeObserver.observe(currentLeftColRef);
+      resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(currentLeftColRef);
     }
 
     return () => {
-        if (resizeObserver && currentLeftColRef) {
-            resizeObserver.unobserve(currentLeftColRef);
-        } else {
-            window.removeEventListener('resize', handleResize);
-        }
+      if (resizeObserver && currentLeftColRef) {
+        resizeObserver.unobserve(currentLeftColRef);
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
     };
-}, []);
+  }, []);
 
   // --- Mouse Event Handlers ---
 
@@ -424,21 +424,21 @@ function SymptomVisualizer({ coordinatesData = []}) {
   const handleMouseMove = useCallback((e) => {
     const { x: mouseX, y: mouseY } = getMousePos(e);
     const canvas = canvasRef.current;
-    if(!canvas) return;
+    if (!canvas) return;
 
     let currentHoveredIndex = -1;
     let isOverBox = false;
 
     for (let i = symptomBoxes.length - 1; i >= 0; i--) {
-        const box = symptomBoxes[i];
-        if (
-            mouseX >= box.x && mouseX <= box.x + BOX_WIDTH &&
-            mouseY >= box.y && mouseY <= box.y + BOX_HEIGHT
-        ) {
-            currentHoveredIndex = i;
-            isOverBox = true;
-            break;
-        }
+      const box = symptomBoxes[i];
+      if (
+        mouseX >= box.x && mouseX <= box.x + BOX_WIDTH &&
+        mouseY >= box.y && mouseY <= box.y + BOX_HEIGHT
+      ) {
+        currentHoveredIndex = i;
+        isOverBox = true;
+        break;
+      }
     }
     setHoveredIndex(currentHoveredIndex);
 
@@ -450,19 +450,19 @@ function SymptomVisualizer({ coordinatesData = []}) {
       const boundedY = Math.max(margin, Math.min(ORIGINAL_HEIGHT - BOX_HEIGHT - margin, newY));
 
       setSymptomBoxes(prevBoxes => {
-          const updatedBoxes = [...prevBoxes];
-          if (draggingIndex < updatedBoxes.length) {
-              updatedBoxes[draggingIndex] = {
-                ...updatedBoxes[draggingIndex],
-                x: boundedX,
-                y: boundedY
-              };
-          }
-          return updatedBoxes;
+        const updatedBoxes = [...prevBoxes];
+        if (draggingIndex < updatedBoxes.length) {
+          updatedBoxes[draggingIndex] = {
+            ...updatedBoxes[draggingIndex],
+            x: boundedX,
+            y: boundedY
+          };
+        }
+        return updatedBoxes;
       });
-       canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = 'grabbing';
     } else {
-        canvas.style.cursor = isOverBox ? 'grab' : 'default';
+      canvas.style.cursor = isOverBox ? 'grab' : 'default';
     }
 
   }, [draggingIndex, dragOffset, getMousePos, symptomBoxes]); // Added symptomBoxes
@@ -471,69 +471,69 @@ function SymptomVisualizer({ coordinatesData = []}) {
     if (draggingIndex !== null) {
       setSymptomBoxes(prevBoxes => preventOverlap(prevBoxes));
       setDraggingIndex(null);
-       // Reset cursor based on potential hover state after dropping
-       const canvas = canvasRef.current;
-       if(canvas) canvas.style.cursor = hoveredIndex !== -1 ? 'grab' : 'default';
+      // Reset cursor based on potential hover state after dropping
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.cursor = hoveredIndex !== -1 ? 'grab' : 'default';
     }
   }, [draggingIndex, preventOverlap, hoveredIndex]); // Added hoveredIndex
 
-   const handleMouseLeave = useCallback(() => {
-        if (draggingIndex !== null) {
-             setSymptomBoxes(prevBoxes => preventOverlap(prevBoxes));
-             setDraggingIndex(null);
-        }
-        setHoveredIndex(null);
-        const canvas = canvasRef.current;
-        if(canvas) canvas.style.cursor = 'default';
-   }, [draggingIndex, preventOverlap]);
+  const handleMouseLeave = useCallback(() => {
+    if (draggingIndex !== null) {
+      setSymptomBoxes(prevBoxes => preventOverlap(prevBoxes));
+      setDraggingIndex(null);
+    }
+    setHoveredIndex(null);
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = 'default';
+  }, [draggingIndex, preventOverlap]);
 
-   // --- Geometry Helper for Line Connection ---
-   const getLineBoxIntersection = (targetX, targetY, box) => {
-        const boxCenterX = box.x + BOX_WIDTH / 2;
-        const boxCenterY = box.y + BOX_HEIGHT / 2;
-        const dx = targetX - boxCenterX;
-        const dy = targetY - boxCenterY;
+  // --- Geometry Helper for Line Connection ---
+  const getLineBoxIntersection = (targetX, targetY, box) => {
+    const boxCenterX = box.x + BOX_WIDTH / 2;
+    const boxCenterY = box.y + BOX_HEIGHT / 2;
+    const dx = targetX - boxCenterX;
+    const dy = targetY - boxCenterY;
 
-        // Avoid division by zero or near-zero
-        if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
-            return { x: boxCenterX, y: boxCenterY }; // Target is essentially at the center
-        }
+    // Avoid division by zero or near-zero
+    if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+      return { x: boxCenterX, y: boxCenterY }; // Target is essentially at the center
+    }
 
-        let t = Infinity;
+    let t = Infinity;
 
-        // Check intersection with box edges using parametric line equation P = C + t*D
-        // Calculate 't' values for intersection with each edge plane
-        if (dx !== 0) {
-            t = Math.min(t, Math.max((box.x - boxCenterX) / dx, (box.x + BOX_WIDTH - boxCenterX) / dx));
-        }
-        if (dy !== 0) {
-            t = Math.min(t, Math.max((box.y - boxCenterY) / dy, (box.y + BOX_HEIGHT - boxCenterY) / dy));
-        }
+    // Check intersection with box edges using parametric line equation P = C + t*D
+    // Calculate 't' values for intersection with each edge plane
+    if (dx !== 0) {
+      t = Math.min(t, Math.max((box.x - boxCenterX) / dx, (box.x + BOX_WIDTH - boxCenterX) / dx));
+    }
+    if (dy !== 0) {
+      t = Math.min(t, Math.max((box.y - boxCenterY) / dy, (box.y + BOX_HEIGHT - boxCenterY) / dy));
+    }
 
-        if (!isFinite(t) || t < 0) { // Fallback if calculation fails or target inside
-             const clampedX = Math.max(box.x, Math.min(targetX, box.x + BOX_WIDTH));
-             const clampedY = Math.max(box.y, Math.min(targetY, box.y + BOX_HEIGHT));
-             const distToLeft = Math.abs(targetX - box.x);
-             const distToRight = Math.abs(targetX - (box.x + BOX_WIDTH));
-             const distToTop = Math.abs(targetY - box.y);
-             const distToBottom = Math.abs(targetY - (box.y + BOX_HEIGHT));
-             const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+    if (!isFinite(t) || t < 0) { // Fallback if calculation fails or target inside
+      const clampedX = Math.max(box.x, Math.min(targetX, box.x + BOX_WIDTH));
+      const clampedY = Math.max(box.y, Math.min(targetY, box.y + BOX_HEIGHT));
+      const distToLeft = Math.abs(targetX - box.x);
+      const distToRight = Math.abs(targetX - (box.x + BOX_WIDTH));
+      const distToTop = Math.abs(targetY - box.y);
+      const distToBottom = Math.abs(targetY - (box.y + BOX_HEIGHT));
+      const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
 
-             if (minDist === distToTop) return { x: clampedX, y: box.y };
-             if (minDist === distToBottom) return { x: clampedX, y: box.y + BOX_HEIGHT };
-             if (minDist === distToLeft) return { x: box.x, y: clampedY };
-             return { x: box.x + BOX_WIDTH, y: clampedY };
-        }
+      if (minDist === distToTop) return { x: clampedX, y: box.y };
+      if (minDist === distToBottom) return { x: clampedX, y: box.y + BOX_HEIGHT };
+      if (minDist === distToLeft) return { x: box.x, y: clampedY };
+      return { x: box.x + BOX_WIDTH, y: clampedY };
+    }
 
-        const intersectX = boxCenterX + t * dx;
-        const intersectY = boxCenterY + t * dy;
+    const intersectX = boxCenterX + t * dx;
+    const intersectY = boxCenterY + t * dy;
 
-        // Clamp to box boundary precisely
-        return {
-            x: Math.max(box.x, Math.min(intersectX, box.x + BOX_WIDTH)),
-            y: Math.max(box.y, Math.min(intersectY, box.y + BOX_HEIGHT)),
-        };
-   };
+    // Clamp to box boundary precisely
+    return {
+      x: Math.max(box.x, Math.min(intersectX, box.x + BOX_WIDTH)),
+      y: Math.max(box.y, Math.min(intersectY, box.y + BOX_HEIGHT)),
+    };
+  };
 
   // --- Drawing Effect ---
   useEffect(() => {
@@ -559,9 +559,9 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
         ctx.beginPath();
         ctx.moveTo(targetX, targetY);
-         const controlX = (targetX + endPoint.x) / 2 + (targetY - endPoint.y) * 0.1;
-         const controlY = (targetY + endPoint.y) / 2 + (endPoint.x - targetX) * 0.1;
-         ctx.quadraticCurveTo(controlX, controlY, endPoint.x, endPoint.y);
+        const controlX = (targetX + endPoint.x) / 2 + (targetY - endPoint.y) * 0.1;
+        const controlY = (targetY + endPoint.y) / 2 + (endPoint.x - targetX) * 0.1;
+        ctx.quadraticCurveTo(controlX, controlY, endPoint.x, endPoint.y);
         ctx.stroke();
       }
     });
@@ -588,9 +588,9 @@ function SymptomVisualizer({ coordinatesData = []}) {
       // Draw Box
       ctx.beginPath();
       if (ctx.roundRect) {
-          ctx.roundRect(box.x, box.y, BOX_WIDTH, BOX_HEIGHT, 8);
+        ctx.roundRect(box.x, box.y, BOX_WIDTH, BOX_HEIGHT, 8);
       } else {
-           ctx.rect(box.x, box.y, BOX_WIDTH, BOX_HEIGHT);
+        ctx.rect(box.x, box.y, BOX_WIDTH, BOX_HEIGHT);
       }
       ctx.fill();
       ctx.stroke();
@@ -632,24 +632,24 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
   // --- Render ---
   const currentSelectedBox = (selectedBoxIndex !== null && selectedBoxIndex < symptomBoxes.length)
-        ? symptomBoxes[selectedBoxIndex]
-        : null;
+    ? symptomBoxes[selectedBoxIndex]
+    : null;
 
-  const InstructionPannel =() => {
+  const InstructionPannel = () => {
     return (
       // --- Instructions Panel ---
       <div className="h-[69vb]">
-          <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
-          <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
-              <li>Click symptom boxes on the left to view details here.</li>
-              <li>Click and drag boxes to rearrange them.</li>
-              <li>Lines connect symptoms to body locations.</li>
-              <li>Colors show severity: <span className="font-bold" style={{color: SEVERITY_COLORS_DARK[0]}}>Yellow</span> to <span className="font-bold" style={{color: SEVERITY_COLORS_DARK[4]}}>Red</span>.</li>
-              <li>Boxes avoid spawning in the very center initially.</li>
-              <li>Hover over boxes for a highlight.</li>
-          </ul>
+        <h3 className={`font-semibold text-base mb-2 border-b pb-1 ${PANEL_BORDER}`}>How to Use:</h3>
+        <ul className="text-sm list-disc pl-5 space-y-1.5 text-gray-300">
+          <li>Click symptom boxes on the left to view details here.</li>
+          <li>Click and drag boxes to rearrange them.</li>
+          <li>Lines connect symptoms to body locations.</li>
+          <li>Colors show severity: <span className="font-bold" style={{ color: SEVERITY_COLORS_DARK[0] }}>Yellow</span> to <span className="font-bold" style={{ color: SEVERITY_COLORS_DARK[4] }}>Red</span>.</li>
+          <li>Boxes avoid spawning in the very center initially.</li>
+          <li>Hover over boxes for a highlight.</li>
+        </ul>
       </div>
-      );
+    );
   }
 
 
@@ -723,8 +723,8 @@ function SymptomVisualizer({ coordinatesData = []}) {
     // Generate bot response with async API call
     const generateBotResponse = async (userMessage, chatHistory) => {
       try {
-        if(symptomsData.length === 0){
-          return(<div>
+        if (symptomsData.length === 0) {
+          return (<div>
             <p className="text-red-200 text-bold text-center">
               Symptom generation is necessary to enable the conversation feature. To generate symptoms, please press the refresh icon
               <RefreshCw style={{ display: 'inline-block', verticalAlign: 'middle' }} className="w-6 h-6 px-1 text-green-200" />
@@ -733,7 +733,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
           </div>)
         }
         if (messages.length >= 30) {
-          return(<div>
+          return (<div>
             <p className="text-red-200 text-bold">
               The conversation quota has been exceeded. Please proceed with a diagnosis based on the information collected thus far.
             </p>
@@ -772,7 +772,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-gray-400 h-full">
               <div className="text-center  p-4">
-                Initiate patient interaction by entering your message in the chatbox.<div className="p-1"/><hr className="opacity-30"/> <p className="text-xs pt-2">A maximum of 15 query attempts are permitted.</p>
+                Initiate patient interaction by entering your message in the chatbox.<div className="p-1" /><hr className="opacity-30" /> <p className="text-xs pt-2">A maximum of 15 query attempts are permitted.</p>
               </ div>
             </div>
           ) : (
@@ -780,19 +780,17 @@ function SymptomVisualizer({ coordinatesData = []}) {
               <div
                 key={index}
                 ref={assignLastMessageRef(index)}
-                className={`flex flex-col max-w-3/4 ${
-                  message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
-                }`}
+                className={`flex flex-col max-w-3/4 ${message.sender === 'user' ? 'items-end ml-auto' : 'items-start mr-auto'
+                  }`}
               >
                 <span className="text-xs opacity-70 px-2">
                   {message.sender === 'user' ? 'You' : 'Virtual Patient'}
                 </span>
                 <div
-                  className={`p-3 rounded-lg ${
-                    message.sender === 'user'
+                  className={`p-3 rounded-lg ${message.sender === 'user'
                       ? 'bg-blue-300 bg-opacity-30 text-white'
                       : 'bg-gray-700 bg-opacity-70 text-white border border-gray-600'
-                  }`}
+                    }`}
                 >
                   {message.text}
                 </div>
@@ -819,7 +817,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
             >
               <Send className="rotate-45" />
             </button>
-          ):(
+          ) : (
             <div class="loader w-8 h-8 pl-2"></div>)
           }
         </div>
@@ -829,41 +827,41 @@ function SymptomVisualizer({ coordinatesData = []}) {
 
   const InfoPannel = () => {
     if (currentSelectedBox != null) {
-      return(
+      return (
         // --- Info Panel ---
         <div className="m-8">
-        <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${PANEL_BORDER}`}>
+          <h3 className={`text-lg font-semibold mb-3 pb-2 border-b ${PANEL_BORDER}`}>
             {currentSelectedBox.name}
-        </h3>
-        <div className="grid grid-cols-1 gap-4 mb-3">
+          </h3>
+          <div className="grid grid-cols-1 gap-4 mb-3">
             <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Severity:</label>
-                <div className="text-xl flex items-center" style={{ color: getStarColorBySeverity(currentSelectedBox.severity) }}>
-                    {"★".repeat(currentSelectedBox.severity) + "☆".repeat(5 - currentSelectedBox.severity)}
-                    <span className="text-sm text-gray-400 ml-2">({currentSelectedBox.severity}/5)</span>
-                </div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Severity:</label>
+              <div className="text-xl flex items-center" style={{ color: getStarColorBySeverity(currentSelectedBox.severity) }}>
+                {"★".repeat(currentSelectedBox.severity) + "☆".repeat(5 - currentSelectedBox.severity)}
+                <span className="text-sm text-gray-400 ml-2">({currentSelectedBox.severity}/5)</span>
+              </div>
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Location:</label>
-                <div className="text-base text-gray-300">{currentSelectedBox.location}</div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Location:</label>
+              <div className="text-base text-gray-300">{currentSelectedBox.location}</div>
             </div>
-        </div>
-        <div className="mt-2">
+          </div>
+          <div className="mt-2">
             <label className="block text-sm font-medium text-gray-400 mb-1">Description:</label>
             <p className={`text-sm text-gray-300 bg-gray-700 p-3 rounded ${PANEL_BORDER} border`}>
-                {currentSelectedBox.description || <span className="italic text-gray-500">No description provided.</span>}
+              {currentSelectedBox.description || <span className="italic text-gray-500">No description provided.</span>}
             </p>
-        </div>
-        <button
+          </div>
+          <button
             onClick={() => setSelectedBoxIndex(null)}
             className={`mt-4 w-full px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-        >
+          >
             Close Details
-        </button>
-    </div>
-  );
+          </button>
+        </div>
+      );
     } else {
-      return(<InstructionPannel />)
+      return (<InstructionPannel />)
     }
 
   };
@@ -874,20 +872,29 @@ function SymptomVisualizer({ coordinatesData = []}) {
     const [editMode, setEditMode] = useState(false);
     const [isRandom, setisRandom] = useState('');
     const [patientInfo, setPatientInfo] = useState({
-        id: 'PT-2025-4872',
-        name: 'John Doe',
-        age: 45,
-        gender: 'Male',
-        height: '5\'10"',
-        weight: '170 lbs'
-      });
+      id: 'PT-2025-4872',
+      name: 'John Doe',
+      age: 45,
+      gender: 'Male',
+      height: '170', // Changed to cm
+      weight: '70', // Changed to kg
+      bmiType: 'Healthy'
+    });
     const [isLoading, setisLoading] = useState(false);
 
     const handleSubmit = async (Disease) => {
       try {
         setisLoading(true);
+        const info = {
+          age: patientInfo.age,
+          gender: patientInfo.gender,
+          height: patientInfo.height,
+          weight: patientInfo.weight,
+          bmiType: patientInfo.bmiType
+        }
         const response = await API.post('/get_symptoms', {
-          disease: Disease
+          disease: Disease,
+          Info: info,
         });
         if (response.data.error) {
           alert(`Error: ${response.data.error} \n please retry`);
@@ -896,6 +903,7 @@ function SymptomVisualizer({ coordinatesData = []}) {
           setisLoading(false);
           SetFdisease(Disease);
           setActiveButton('info');
+          setPatientInfo_(patientInfo);
         }
       } catch (error) {
         console.error('Error fetching symptoms:', error);
@@ -914,607 +922,643 @@ function SymptomVisualizer({ coordinatesData = []}) {
     }
 
     const handleEdit = () => {
-        setEditMode(!editMode);
-      };
+      setEditMode(!editMode);
+    };
 
     const handleChange = (field, value) => {
-        setPatientInfo({...patientInfo, [field]: value});
-      };
+      setPatientInfo({ ...patientInfo, [field]: value });
+    };
+
+    // Calculate BMI function
+    const calculateBMI = () => {
+      const height = parseFloat(patientInfo.height) / 100; // in meters
+      const weight = parseFloat(patientInfo.weight);
+      if (!height || !weight) return 0;
+      return (weight / (height * height)).toFixed(1);
+    };
+
+    const getBMIComment = (bmi) => {
+      if (bmi < 18.5) return 'Under';
+      if (bmi < 24.9) return 'Normal';
+      if (bmi < 29.9) return 'Over';
+      return 'Obese';
+    };
+
 
     useEffect(() => {
-        if (disease.length === 0) {
-          setisRandom('Random');
-        } else {
-          setisRandom('Begin Simulation');
-        }
-      }, [disease]);
+      if (disease.length === 0) {
+        setisRandom('Random');
+      } else {
+        setisRandom('Begin Simulation');
+      }
+    }, [disease]);
 
-    const renderField = (label, field) => {
-       return (
-         <div className="space-y-1">
-           <p className="text-blue-100 text-sm">{label}</p>
-           {editMode ? (
-             <input
-               type={field === 'age' ? 'number' : 'text'}
-               value={patientInfo[field]}
-               onChange={(e) => handleChange(field, e.target.value)}
-               className="w-full p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-400"
-             />
-           ) : (
-             <input
-               type={field === 'age' ? 'number' : 'text'}
-               value={patientInfo[field]}
-               readOnly // Make the input read-only (inactive)
-               className="w-full p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white focus:outline-none"
-               style={{ pointerEvents: 'none' }} // Disable pointer interactions
-             />
-           )}
-         </div>
-       );
-     };
+    const renderField = (label, field, titleText = null) => {
+      const isNumericField = ['age', 'height', 'weight'].includes(field);
+      const isBMI = field === 'bmiType';
+      const bmi = calculateBMI();
+      const bmiComment = getBMIComment(bmi);
+      const commonClass = 'w-full p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white';
+
+      return (
+        <div className="space-y-1 select-none">
+          <p
+            className="text-blue-100 text-sm cursor-default"
+            title={titleText || ''}
+          >
+            {label}
+          </p>
+
+          {editMode ? (
+            isBMI ? (
+              <div className={commonClass}>
+                {bmi} ({bmiComment})
+              </div>
+            ) : (
+              <input
+                type={isNumericField ? 'number' : 'text'}
+                value={patientInfo[field]}
+                onChange={(e) => handleChange(field, e.target.value)}
+                className={`${commonClass} focus:outline-none focus:ring-1 focus:ring-blue-400`}
+              />
+            )
+          ) : isBMI ? (
+            <div className={commonClass}>
+              {bmi} ({bmiComment})
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={patientInfo[field]}
+              readOnly
+              className={`${commonClass} focus:outline-none`}
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
+        </div>
+      );
+    };
 
     return (
       <div className="flex justify-center text-white bg-black bg-opacity-10 backdrop-blur-sm">
         {isLoading ? (
           <div className="h-[69vb] flex items-center justify-center">
             {/* Spinner from Uiverse */}
-            <div className="loading inline-flex flex-col items-center justify-center"> {/* Added inline-flex and flex-col */}
-            <svg width="64px" height="48px">
-              <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="back"></polyline>
-              <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="front"></polyline>
-            </svg>
-            <div>
-              <p className="items-center justify center text-white text-sm text-opacity-50 py-4">Please wait while we fetch symptoms ..</p>
+            <div className="loading inline-flex flex-col items-center justify-center">
+              <svg width="64px" height="48px">
+                <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="back"></polyline>
+                <polyline points="0.157 23.954, 14 23.954, 21.843 48, 43 0, 50 24, 64 24" id="front"></polyline>
+              </svg>
+              <div>
+                <p className="items-center justify center text-white text-sm text-opacity-50 py-4">Please wait while we fetch symptoms ..</p>
+              </div>
             </div>
           </div>
-        </div>
         ) : (
           <div className="py-8 w-[100%]">
-                {/* Patient ID Card Style Layout */}
-                <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl py-4 px-5 mb-8 relative">
-                  <div className="absolute top-4 right-4">
-                    <button
-                      onClick={handleEdit}
-                      className="bg-gray-600 rounded-full p-1 translate-x-2 -translate-y-2 hover:bg-gray-400 transition-colors duration-200"
-                    >
-                      {editMode ?
-                        <Save size={16} className="text-green-300" /> :
-                        <Edit size={16} className="text-gray-300" />
-                      }
-                    </button>
-                  </div>
+            {/* Patient ID Card Style Layout */}
+            <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl py-4 px-5 mb-8 relative">
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={handleEdit}
+                  className="bg-gray-600 rounded-full p-1 translate-x-2 -translate-y-2 hover:bg-gray-400 transition-colors duration-200"
+                >
+                  {editMode ?
+                    <Save size={16} className="text-green-300" /> :
+                    <Edit size={16} className="text-gray-300" />
+                  }
+                </button>
+              </div>
 
-                  <div className="flex flex-col sm:flex-row gap-6">
-                    {/* Left Column - Avatar and ID */}
-                    <div className="w-full sm:w-1/3">
-                      {/* Virtual Person Symbol */}
-                      <div className="bg-gray-800 rounded-lg w-full aspect-square flex items-center justify-center mt-6 mb-4">
-                        <User
-                            size={90}
-                              className={`
-                                ${patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' ? 'text-blue-400' : ''}
-                                ${patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f' ? 'text-rose-400' : ''}
-                                ${!(patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' || patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f') ? 'text-gray-500' : ''}
-                          `}
-                        />
-                      </div>
-
-                      {/* Patient ID */}
-                      <div className="border-t border-gray-700 pt-3 mt-3">
-                        <p className="text-gray-400 text-sm">Patient ID</p>
-                          <p className="text-white font-mono text-xs">{patientInfo.id}</p>
-                      </div>
-                    </div>
-
-                    {/* Right Column - Detailed Info */}
-                    <div className="w-full sm:w-2/3 bg-gray-400 bg-opacity-30 rounded-lg p-4">
-                      <h2 className="text-sm font-semibold py-1 text-white mb-1 border-b border-gray-400">
-                        Patient Information {editMode && <span className="text-sm text-blue-300">(Editing)</span>}
-                      </h2>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {renderField('Full Name', 'name')}
-                        {renderField('Age', 'age')}
-                        {renderField('Gender', 'gender')}
-                        {renderField('Height', 'height')}
-                        {renderField('Weight', 'weight')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Disease Simulation Section */}
-                <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl p-6">
-                  <h2 className="text-xl font-semibold text-white mb-4">Disease Simulator</h2>
-                  <div className="relative mb-6">
-                    <label className="block text-lg font-medium text-gray-300 mb-2">
-                      Enter name of disease to simulate
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Diabetes"
-                      className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
-                      value={disease}
-                      onChange={(e) => setDisease(e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, handlerandomcheck)}
-
+              <div className="flex flex-col sm:flex-row gap-6">
+                {/* Left Column - Avatar and ID */}
+                <div className="w-full sm:w-1/3">
+                  {/* Virtual Person Symbol */}
+                  <div className="bg-gray-800 rounded-lg w-full aspect-square flex items-center justify-center mt-6 mb-4">
+                    <User
+                      size={90}
+                      className={`
+                        ${patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' ? 'text-blue-400' : ''}
+                        ${patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f' ? 'text-rose-400' : ''}
+                        ${!(patientInfo.gender?.toLowerCase() === 'male' || patientInfo.gender?.toLowerCase() === 'm' || patientInfo.gender?.toLowerCase() === 'female' || patientInfo.gender?.toLowerCase() === 'f') ? 'text-gray-500' : ''}
+                      `}
                     />
                   </div>
-                  <button
-                    onClick={handlerandomcheck}
-                    className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {isRandom === 'Random' ? (
-                      <>
-                        <Shuffle className="w-4 h-4 inline-block mr-1" /> Random
-                      </>
-                    ) : isRandom === 'Begin Simulation' ? (
-                      <p>Begin Simulation</p>
-                            ) : null}
-                  </button>
+
+                  {/* Patient ID */}
+                  <div className="border-t border-gray-700 pt-3 mt-3">
+                    <p className="text-gray-400 text-sm">Patient ID</p>
+                    <p className="text-white font-mono text-xs">{patientInfo.id}</p>
+                  </div>
+                </div>
+
+                {/* Right Column - Detailed Info */}
+                <div className="w-full sm:w-2/3 bg-gray-400 bg-opacity-30 rounded-lg p-4">
+                  <h2 className="text-sm font-semibold py-1 text-white mb-1 border-b border-gray-400">
+                    Patient Information {editMode && <span className="text-sm text-blue-300">(Editing)</span>}
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {renderField('Full Name', 'name')}
+                    {renderField('Age', 'age')}
+                    {renderField('Gender', 'gender')}
+                    {renderField('Height', 'height', 'Height in cm')}
+                    {renderField('Weight', 'weight', 'Weight in Kg')}
+                    {renderField('BMI', 'bmiType', `Your BMI: ${calculateBMI()} (${getBMIComment(calculateBMI())})`)}
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* Disease Simulation Section */}
+            <div className="bg-black bg-opacity-20 border border-gray-700 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Disease Simulator</h2>
+              <div className="relative mb-6">
+                <label className="block text-lg font-medium text-gray-300 mb-2">
+                  Enter name of disease to simulate
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Diabetes"
+                  className="w-full px-4 py-3 border border-gray-600 rounded-lg text-white bg-black bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-red-300 placeholder-gray-500"
+                  value={disease}
+                  onChange={(e) => setDisease(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, handlerandomcheck)}
+                />
+              </div>
+              <button
+                onClick={handlerandomcheck}
+                className="w-full px-4 py-3 bg-black border-[1px] border-white border-opacity-10 hover:border-red-800 hover:border-opacity-40 bg-opacity-10 hover:bg-red-400 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {isRandom === 'Random' ? (
+                  <>
+                    <Shuffle className="w-4 h-4 inline-block mr-1" /> Random
+                  </>
+                ) : isRandom === 'Begin Simulation' ? (
+                  <p>Begin Simulation</p>
+                ) : null}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     );
   };
 
-// issue #26 guide pannel
-const Guide = () => {
-  const journeySteps = [
-    {
-      icon: <Search className="w-10 h-10 text-blue-400" />,
-      title: "Embark on Your Quest",
-      content:
-        "Your diagnostic adventure begins here. Enter a known condition, or let fate decide with a random selection to challenge your skills.",
-    },
-    {
-      icon: <Eye className="w-10 h-10 text-purple-400" />,
-      title: "Uncover the Clues",
-      content:
-        "Observe the presenting symptoms. Some are visually mapped to the body. Delve deeper by clicking a symptom to reveal its severity and details.",
-    },
-    {
-      icon: <MessageCircle className="w-10 h-10 text-green-400" />,
-      title: "Converse with the Patient",
-      content:
-        "Engage in dialogue. You have 15 opportunities to ask crucial follow-up questions. Choose them wisely to piece together the medical puzzle.",
-    },
-    {
-      icon: <Sparkles className="w-10 h-10 text-white" />,
-      title: "Synthesize Your Findings",
-      content:
-        "The moment of truth approaches. Weave together all gathered information – symptoms, details, and conversation insights – to form your final diagnosis.",
-    },
-    {
-      icon: <RotateCcw className="w-10 h-10 text-red-400" />,
-      title: "Begin Anew",
-      content:
-        "Ready for another challenge? Hit restart to clear the slate and embark on a fresh diagnostic journey with a new mystery to solve.",
-    },
-  ];
-
-  // State to track which steps are visible
-  const [visibleSteps, setVisibleSteps] = useState({});
-  // Refs for each step element to observe
-  const stepRefs = useRef([]);
-
-  useEffect(() => {
-    // Ensure refs array is populated correctly
-    stepRefs.current = stepRefs.current.slice(0, journeySteps.length);
-
-    // Intersection Observer setup
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Mark the step as visible when it enters the viewport
-            setVisibleSteps((prev) => ({
-              ...prev,
-              [entry.target.dataset.index]: true,
-            }));
-            // Optional: Unobserve after becoming visible if you only want the animation once
-            // observer.unobserve(entry.target);
-          }
-          // Optional: Mark as not visible if it leaves the viewport (if you want fade-out)
-          // else {
-          //   setVisibleSteps((prev) => ({
-          //     ...prev,
-          //     [entry.target.dataset.index]: false,
-          //   }));
-          // }
-        });
+  // issue #26 guide pannel
+  const Guide = () => {
+    const journeySteps = [
+      {
+        icon: <Search className="w-10 h-10 text-blue-400" />,
+        title: "Embark on Your Quest",
+        content:
+          "Your diagnostic adventure begins here. Enter a known condition, or let fate decide with a random selection to challenge your skills.",
       },
       {
-        root: null, // Use the viewport as the root
-        threshold: 0.3, // Trigger when 30% of the element is visible
-        rootMargin: '0px 0px -50px 0px' // Adjust margin to trigger slightly earlier/later
-      }
-    );
+        icon: <Eye className="w-10 h-10 text-purple-400" />,
+        title: "Uncover the Clues",
+        content:
+          "Observe the presenting symptoms. Some are visually mapped to the body. Delve deeper by clicking a symptom to reveal its severity and details.",
+      },
+      {
+        icon: <MessageCircle className="w-10 h-10 text-green-400" />,
+        title: "Converse with the Patient",
+        content:
+          "Engage in dialogue. You have 15 opportunities to ask crucial follow-up questions. Choose them wisely to piece together the medical puzzle.",
+      },
+      {
+        icon: <Sparkles className="w-10 h-10 text-white" />,
+        title: "Synthesize Your Findings",
+        content:
+          "The moment of truth approaches. Weave together all gathered information – symptoms, details, and conversation insights – to form your final diagnosis.",
+      },
+      {
+        icon: <RotateCcw className="w-10 h-10 text-red-400" />,
+        title: "Begin Anew",
+        content:
+          "Ready for another challenge? Hit restart to clear the slate and embark on a fresh diagnostic journey with a new mystery to solve.",
+      },
+    ];
 
-    // Observe each step ref that exists
-    stepRefs.current.forEach((ref) => {
-      if (ref) {
-        observer.observe(ref);
-      }
-    });
+    // State to track which steps are visible
+    const [visibleSteps, setVisibleSteps] = useState({});
+    // Refs for each step element to observe
+    const stepRefs = useRef([]);
 
-    // Cleanup: Disconnect observer when component unmounts
-    return () => {
+    useEffect(() => {
+      // Ensure refs array is populated correctly
+      stepRefs.current = stepRefs.current.slice(0, journeySteps.length);
+
+      // Intersection Observer setup
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              // Mark the step as visible when it enters the viewport
+              setVisibleSteps((prev) => ({
+                ...prev,
+                [entry.target.dataset.index]: true,
+              }));
+              // Optional: Unobserve after becoming visible if you only want the animation once
+              // observer.unobserve(entry.target);
+            }
+            // Optional: Mark as not visible if it leaves the viewport (if you want fade-out)
+            // else {
+            //   setVisibleSteps((prev) => ({
+            //     ...prev,
+            //     [entry.target.dataset.index]: false,
+            //   }));
+            // }
+          });
+        },
+        {
+          root: null, // Use the viewport as the root
+          threshold: 0.3, // Trigger when 30% of the element is visible
+          rootMargin: '0px 0px -50px 0px' // Adjust margin to trigger slightly earlier/later
+        }
+      );
+
+      // Observe each step ref that exists
       stepRefs.current.forEach((ref) => {
         if (ref) {
-          observer.unobserve(ref);
+          observer.observe(ref);
         }
       });
-      observer.disconnect();
-    };
-  }, [journeySteps.length]); // Rerun effect if number of steps changes
 
-  return (
-    // Main container with background gradient and padding
-    <div className="flex flex-col items-center w-full py-20 px-4 bg-gradient-to-b from-gray-950 via-gray-800 to-gray-950 text-white min-h-screen overflow-hidden border-[1px] border-gray-700 rounded-md">
-      {/* Optional Title for the Guide Section */}
-      <h1 className="text-4xl font-bold mb-16 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-        Your Diagnostic Journey
-      </h1>
+      // Cleanup: Disconnect observer when component unmounts
+      return () => {
+        stepRefs.current.forEach((ref) => {
+          if (ref) {
+            observer.unobserve(ref);
+          }
+        });
+        observer.disconnect();
+      };
+    }, [journeySteps.length]); // Rerun effect if number of steps changes
 
-      <div className="text-center m-24">
-        <div className="inline-block p-4 rounded-md">
-          <h2 className="text-sm mb-2 text-purple-400 font-semibold">
-            Start Exploring
-          </h2>
-          <p className="text-xs text-gray-500">
-            Scroll to discover the first step.
-          </p>
-          <div className="animate-bounce mt-4">
-            <ChevronDown className="w-6 h-6 mx-auto text-purple-400" />
-          </div>
-        </div>
-      </div>
+    return (
+      // Main container with background gradient and padding
+      <div className="flex flex-col items-center w-full py-20 px-4 bg-gradient-to-b from-gray-950 via-gray-800 to-gray-950 text-white min-h-screen overflow-hidden border-[1px] border-gray-700 rounded-md">
+        {/* Optional Title for the Guide Section */}
+        <h1 className="text-4xl font-bold mb-16 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+          Your Diagnostic Journey
+        </h1>
 
-      {journeySteps.map((step, index) => {
-        const isVisible = !!visibleSteps[index];
-
-        return (
-          <div
-            key={index}
-            // Assign ref and data-index for Intersection Observer
-            ref={(el) => (stepRefs.current[index] = el)}
-            data-index={index}
-            className={`flex flex-col items-center relative transition-all duration-1000 ease-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-            }`} // Fade-in and slide-up animation
-          >
-            {/* Render the connecting line above the step (except for the first one) */}
-            {index > 0 && (
-              <div
-                aria-hidden="true"
-                className={`h-14 w-1 bg-gradient-to-b from-blue-500/60 via-purple-500/60 to-blue-500/60 transition-opacity duration-500 delay-300 ${
-                   // Only show line if the *previous* step is visible
-                  visibleSteps[index - 1] ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-            )}
-
-            {/* Step Card Content */}
-            <div
-              className="flex flex-col items-center text-center max-w-lg w-full bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-700/50"
-            >
-              <div className="mb-5 p-3 bg-gray-700/50 rounded-full shadow-inner">
-                 {/* Apply subtle animation to icon when card becomes visible */}
-                <div className={`transition-transform duration-500 ease-out ${isVisible ? 'scale-100 rotate-0' : 'scale-90 -rotate-12'}`}>
-                   {step.icon}
-                </div>
-              </div>
-              <h2 className="text-2xl font-semibold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-400">
-                {step.title}
-              </h2>
-              <p className="text-gray-300 text-base leading-relaxed">
-                {step.content}
-              </p>
+        <div className="text-center m-24">
+          <div className="inline-block p-4 rounded-md">
+            <h2 className="text-sm mb-2 text-purple-400 font-semibold">
+              Start Exploring
+            </h2>
+            <p className="text-xs text-gray-500">
+              Scroll to discover the first step.
+            </p>
+            <div className="animate-bounce mt-4">
+              <ChevronDown className="w-6 h-6 mx-auto text-purple-400" />
             </div>
           </div>
-        );
-      })}
-    </div>
-  );
-};
+        </div>
 
+        {journeySteps.map((step, index) => {
+          const isVisible = !!visibleSteps[index];
 
-// issue #37 SubmitPannel -- START
-const ViewSubmit = () => {
-  const [inputText, setInputText] = useState('');
-  const [error, setError] = useState(null);
+          return (
+            <div
+              key={index}
+              // Assign ref and data-index for Intersection Observer
+              ref={(el) => (stepRefs.current[index] = el)}
+              data-index={index}
+              className={`flex flex-col items-center relative transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+                }`} // Fade-in and slide-up animation
+            >
+              {/* Render the connecting line above the step (except for the first one) */}
+              {index > 0 && (
+                <div
+                  aria-hidden="true"
+                  className={`h-14 w-1 bg-gradient-to-b from-blue-500/60 via-purple-500/60 to-blue-500/60 transition-opacity duration-500 delay-300 ${
+                    // Only show line if the *previous* step is visible
+                    visibleSteps[index - 1] ? 'opacity-100' : 'opacity-0'
+                    }`}
+                />
+              )}
 
-
-  // Function to get access to the context or parent variables safely
-  const getParentData = () => {
-    try {
-      return {
-        symptoms: symptomsData || null,
-        chatHistory: messages || []
-      };
-    } catch (e) {
-      console.error("Failed to access required data:", e);
-      return { symptoms: null, chatHistory: [] };
-    }
+              {/* Step Card Content */}
+              <div
+                className="flex flex-col items-center text-center max-w-lg w-full bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-700/50"
+              >
+                <div className="mb-5 p-3 bg-gray-700/50 rounded-full shadow-inner">
+                  {/* Apply subtle animation to icon when card becomes visible */}
+                  <div className={`transition-transform duration-500 ease-out ${isVisible ? 'scale-100 rotate-0' : 'scale-90 -rotate-12'}`}>
+                    {step.icon}
+                  </div>
+                </div>
+                <h2 className="text-2xl font-semibold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-400">
+                  {step.title}
+                </h2>
+                <p className="text-gray-300 text-base leading-relaxed">
+                  {step.content}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
-  const handleSubmit = async () => {
-    if (!inputText.trim()) return;
 
-    setError(null);
-    setIsSubmitting(true);
-    setSubmittedText(inputText);
+  // issue #37 SubmitPannel -- START
+  const ViewSubmit = () => {
+    const [inputText, setInputText] = useState('');
+    const [error, setError] = useState(null);
 
-    const { symptoms, chatHistory } = getParentData();
 
-    // Validate data before sending
-    if (!symptoms) {
-      setError("Cannot access symptoms data. Please make sure you've selected a disease first.");
-      setIsSubmitting(false);
-      return;
-    }
+    // Function to get access to the context or parent variables safely
+    const getParentData = () => {
+      try {
+        return {
+          symptoms: symptomsData || null,
+          chatHistory: messages || []
+        };
+      } catch (e) {
+        console.error("Failed to access required data:", e);
+        return { symptoms: null, chatHistory: [] };
+      }
+    };
 
-    try {
+    const handleSubmit = async () => {
+      if (!inputText.trim()) return;
+
+      setError(null);
       setIsSubmitting(true);
-      const response = await API.post("/generateReport", {
-        userResponse: inputText,
-        symptoms: symptoms,
-        ChatHistory: chatHistory,
-        disease: Fdisease,
-      });
+      setSubmittedText(inputText);
 
-      console.log('Submitted successfully:', response);
+      const { symptoms, chatHistory } = getParentData();
 
-      if (response.data && response.data.Report) {
-        console.log(response.data);
-        setReportResult(response.data);
-        const datatoView = {};
+      // Validate data before sending
+      if (!symptoms) {
+        setError("Cannot access symptoms data. Please make sure you've selected a disease first.");
+        setIsSubmitting(false);
+        return;
+      }
 
-        if (response.data && response.data.Report && response.data.Report.Result && response.data.Report.categories) {
-          const categories = response.data.Report.categories;
-          for (const category in categories) {
-            if (categories.hasOwnProperty(category) && category === "Medical Competency") {
-              const subCategory = categories[category];
-              for (const key in subCategory) {
-                if (subCategory.hasOwnProperty(key) && typeof subCategory[key] === 'number') {
-                  datatoView[key] = subCategory[key]; // Just use the sub-key
+      try {
+        setIsSubmitting(true);
+        console.log("patientinfo",patientInfo_)
+        const response = await API.post("/generateReport", {
+          userResponse: inputText,
+          symptoms: symptoms,
+          ChatHistory: chatHistory,
+          disease: Fdisease,
+          Info: patientInfo_,
+        });
+
+        console.log('Submitted successfully:', response);
+
+        if (response.data && response.data.Report) {
+          console.log(response.data);
+          setReportResult(response.data);
+          const datatoView = {};
+
+          if (response.data && response.data.Report && response.data.Report.Result && response.data.Report.categories) {
+            const categories = response.data.Report.categories;
+            for (const category in categories) {
+              if (categories.hasOwnProperty(category) && category === "Medical Competency") {
+                const subCategory = categories[category];
+                for (const key in subCategory) {
+                  if (subCategory.hasOwnProperty(key) && typeof subCategory[key] === 'number') {
+                    datatoView[key] = subCategory[key]; // Just use the sub-key
+                  }
                 }
               }
             }
           }
+
+          console.log(datatoView);
+          setReportData(datatoView);
+          setIsSubmitted(true)
+          setInputText('');
+          setIsSubmitting(false);
+        } else if (response.data && response.data.error) {
+          setIsSubmitting(false);
+          setError(response.data.error || "Received invalid report format");
+        } else {
+          setIsSubmitting(false);
+          setError("Received invalid response from server");
         }
-
-        console.log(datatoView);
-        setReportData(datatoView);
-        setIsSubmitted(true)
-        setInputText('');
+      } catch (error) {
         setIsSubmitting(false);
-      } else if (response.data && response.data.error) {
-        setIsSubmitting(false);
-        setError(response.data.error || "Received invalid report format");
-      } else {
-        setIsSubmitting(false);
-        setError("Received invalid response from server");
+        console.error('Error submitting response:', error);
+        setError(error.message || "Failed to submit. Please try again.");
       }
-    } catch (error) {
-      setIsSubmitting(false);
-      console.error('Error submitting response:', error);
-      setError(error.message || "Failed to submit. Please try again.");
-    }
-  };
+    };
 
-  return (
-    <div className="h-[69vh] p-5 bg-gray-800 rounded-xl overflow-hidden flex flex-col">
-      {/* Header with toggle button */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          {isSubmitted && (
-            <button
-              onClick={() => setIsSubmitted(false)}
-              className="mr-3 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition duration-200 flex items-center"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span className="ml-1 text-xs">Back</span>
-            </button>
-          )}
-          <h2 className="text-blue-100 font-medium">
-            {isSubmitted ? "Report Results" : "Submit Panel"}
-          </h2>
-        </div>
-
-        {isSubmitting && (
+    return (
+      <div className="h-[69vh] p-5 bg-gray-800 rounded-xl overflow-hidden flex flex-col">
+        {/* Header with toggle button */}
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center">
-            <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
-            <span className="text-blue-200 text-xs">Processing...</span>
-          </div>
-        )}
-      </div>
-
-      {/* Conditional rendering based on isSubmitted state */}
-      {!isSubmitted ? (
-        /* Input Area */
-        <div className="flex-grow flex flex-col">
-          <textarea
-            className="w-full flex-grow p-3 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition duration-200"
-            placeholder="Write your submission here..."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            disabled={isSubmitting}
-            onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
-          ></textarea>
-
-          <div className="flex items-center justify-between mt-2">
-            <small className="text-gray-400 text-xs">
-              {inputText.length > 0 ? `${inputText.length} characters` : "Enter your text"}
-            </small>
-            <button
-              onClick={() => {
-                handleSubmit();
-                setIsSubmitted(true);
-              }}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed transition duration-200 flex items-center"
-              disabled={isSubmitting || !inputText.trim()}
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
-            </button>
+            {isSubmitted && (
+              <button
+                onClick={() => setIsSubmitted(false)}
+                className="mr-3 p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition duration-200 flex items-center"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span className="ml-1 text-xs">Back</span>
+              </button>
+            )}
+            <h2 className="text-blue-100 font-medium">
+              {isSubmitted ? "Report Results" : "Submit Panel"}
+            </h2>
           </div>
 
-          {/* Error message */}
-          {error && (
-            <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg text-red-300 text-sm mt-4 border-l-4 border-red-500 flex items-start">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              {error}
+          {isSubmitting && (
+            <div className="flex items-center">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
+              <span className="text-blue-200 text-xs">Processing...</span>
             </div>
           )}
         </div>
-      ) : (
-        /* Results Area */
-        <div className="flex-grow overflow-y-auto space-y-4 pr-1">
-          {/* Submitted text section */}
-          {submittedText && (
-            <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
-              <div className="flex items-center mb-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                <h3 className="text-sm font-medium text-blue-300">Your Submission</h3>
-              </div>
-              <div className="bg-gray-800 p-3 rounded-lg text-white text-sm whitespace-pre-wrap">
-                {submittedText}
-              </div>
+
+        {/* Conditional rendering based on isSubmitted state */}
+        {!isSubmitted ? (
+          /* Input Area */
+          <div className="flex-grow flex flex-col">
+            <textarea
+              className="w-full flex-grow p-3 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition duration-200"
+              placeholder="Write your submission here..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              disabled={isSubmitting}
+              onKeyDown={(e) => handleKeyDown(e, handleSubmit)}
+            ></textarea>
+
+            <div className="flex items-center justify-between mt-2">
+              <small className="text-gray-400 text-xs" title="Check total charachters">
+                {inputText.length > 0 ? `${inputText.length} characters` : "?"}
+              </small>
+              <button
+                onClick={() => {
+                  handleSubmit();
+                  setIsSubmitted(true);
+                }}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed transition duration-200 flex items-center"
+                disabled={isSubmitting || !inputText.trim()}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </button>
             </div>
-          )}
 
-          {/* Report results section */}
-          {reportResult && (
-            <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-gray-800 px-2 py-1 rounded-full text-xs text-gray-300">
-                  {new Date().toLocaleDateString()}
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg text-red-300 text-sm mt-4 border-l-4 border-red-500 flex items-start">
+                <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Results Area */
+          <div className="flex-grow overflow-y-auto space-y-4 pr-1">
+            {/* Submitted text section */}
+            {submittedText && (
+              <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+                <div className="flex items-center mb-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                  <h3 className="text-sm font-medium text-blue-300">Your Submission</h3>
+                </div>
+                <div className="bg-gray-800 p-3 rounded-lg text-white text-sm whitespace-pre-wrap text-justify">
+                  {submittedText}
                 </div>
               </div>
+            )}
 
-              {/* Results summary section */}
-              <div className="mb-5">
-                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Analysis Results
-                </h4>
-                <div className="grid grid-cols-1 gap-3 mt-2">
-                  <div className="bg-green-900 bg-opacity-20 p-3 rounded-lg border border-green-800">
-                    <p className="text-green-300 font-medium mb-1">Positive</p>
-                    <p className="text-sm text-white">{reportResult.Report.Result.Positive}</p>
-                  </div>
-                  <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800">
-                    <p className="text-red-300 font-medium mb-1">Negative</p>
-                    <p className="text-sm text-white">{reportResult.Report.Result.Negative}</p>
+            {/* Report results section */}
+            {reportResult && (
+              <div className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-gray-800 px-2 py-1 rounded-full text-xs text-gray-300">
+                    {new Date().toLocaleDateString()}
                   </div>
                 </div>
-              </div>
 
-              {/* Medical Competency section */}
-              <div className="mb-5">
-                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                  </svg>
-                  Medical Competency
-                </h4>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {Object.entries(reportResult.Report.categories["Medical Competency"]).map(([key, value]) => (
-                    <div key={key} className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
-                      <p className="text-xs text-gray-400 mb-1">{key}</p>
+                {/* Results summary section */}
+                <div className="mb-5">
+                  <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Analysis Results
+                  </h4>
+                  <div className="grid grid-cols-1 gap-3 mt-2">
+                    <div className="bg-green-900 bg-opacity-20 p-3 rounded-lg border border-green-800 text-justify">
+                      <p className="text-green-300 font-medium mb-1">Positive</p>
+                      <p className="text-sm text-white">{reportResult.Report.Result.Positive}</p>
+                    </div>
+                    <div className="bg-red-900 bg-opacity-20 p-3 rounded-lg border border-red-800 text-justify">
+                      <p className="text-red-300 font-medium mb-1">Negative</p>
+                      <p className="text-sm text-white">{reportResult.Report.Result.Negative}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Medical Competency section */}
+                <div className="mb-5">
+                  <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                    </svg>
+                    Medical Competency
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {Object.entries(reportResult.Report.categories["Medical Competency"]).map(([key, value]) => (
+                      <div key={key} className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                        <p className="text-xs text-gray-400 mb-1">{key}</p>
+                        <div className="flex items-center">
+                          <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
+                            <div
+                              className={`h-2 rounded-full ${value >= 8 ? 'bg-green-500' : value >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                              style={{ width: `${value * 10}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-white font-medium">{value}/10</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Visualization section */}
+                <div className="mb-5">
+                  <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3z" clipRule="evenodd" />
+                    </svg>
+                    Performance Metrics
+                  </h4>
+                  <div className="w-full h-64 my-3 bg-gray-800 rounded-lg p-2 border border-gray-700">
+                    <BarGraph data={ReportData} />
+                  </div>
+                </div>
+
+                {/* Additional metrics section */}
+                <div>
+                  <h4 className="text-blue-300 font-medium mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    Additional Metrics
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-gray-800 py-3 px-1 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                      <p className="text-xs text-gray-400 mb-1">Communication Style</p>
                       <div className="flex items-center">
                         <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
                           <div
-                            className={`h-2 rounded-full ${
-                              value >= 8 ? 'bg-green-500' : value >= 5 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${value * 10}%` }}
+                            className={`h-2 rounded-full ${reportResult.Report.categories["Communication style"] >= 8 ? 'bg-green-500' :
+                                reportResult.Report.categories["Communication style"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                            style={{ width: `${reportResult.Report.categories["Communication style"] * 10}%` }}
                           ></div>
                         </div>
-                        <span className="text-white font-medium">{value}/10</span>
+                        <span className="text-white font-medium">{reportResult.Report.categories["Communication style"]}/10</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visualization section */}
-              <div className="mb-5">
-                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 3a1 1 0 000 2h10a1 1 0 100-2H3zm0 4a1 1 0 000 2h6a1 1 0 100-2H3zm0 4a1 1 0 100 2h8a1 1 0 100-2H3z" clipRule="evenodd" />
-                  </svg>
-                  Performance Metrics
-                </h4>
-                <div className="w-full h-64 my-3 bg-gray-800 rounded-lg p-2 border border-gray-700">
-                  <BarGraph data={ReportData} />
-                </div>
-              </div>
-
-              {/* Additional metrics section */}
-              <div>
-                <h4 className="text-blue-300 font-medium mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clipRule="evenodd" />
-                  </svg>
-                  Additional Metrics
-                </h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-gray-800 py-3 px-1 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
-                    <p className="text-xs text-gray-400 mb-1">Communication Style</p>
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            reportResult.Report.categories["Communication style"] >= 8 ? 'bg-green-500' :
-                            reportResult.Report.categories["Communication style"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${reportResult.Report.categories["Communication style"] * 10}%` }}
-                        ></div>
+                    <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                      <p className="text-xs text-gray-400 mb-1">Presentation Quality</p>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
+                          <div
+                            className={`h-2 rounded-full ${reportResult.Report.categories["Presentation Quality"] >= 8 ? 'bg-green-500' :
+                                reportResult.Report.categories["Presentation Quality"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                            style={{ width: `${reportResult.Report.categories["Presentation Quality"] * 10}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-white font-medium">{reportResult.Report.categories["Presentation Quality"]}/10</span>
                       </div>
-                      <span className="text-white font-medium">{reportResult.Report.categories["Communication style"]}/10</span>
                     </div>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
-                    <p className="text-xs text-gray-400 mb-1">Presentation Quality</p>
-                    <div className="flex items-center">
-                      <div className="w-full bg-gray-700 rounded-full h-2 mr-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            reportResult.Report.categories["Presentation Quality"] >= 8 ? 'bg-green-500' :
-                            reportResult.Report.categories["Presentation Quality"] >= 5 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${reportResult.Report.categories["Presentation Quality"] * 10}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-white font-medium">{reportResult.Report.categories["Presentation Quality"]}/10</span>
+                    <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
+                      <p className="text-xs text-gray-400 mb-3">Diagnosis</p>
+                      <p className={`text-lg font-medium ${reportResult.Report.categories["Correctly Diagnosed"] ? "text-green-400" : "text-red-400"}`}>
+                        {reportResult.Report.categories["Correctly Diagnosed"] ? "Correct" : "Incorrect"}
+                      </p>
                     </div>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-700 transition duration-200">
-                    <p className="text-xs text-gray-400 mb-3">Diagnosis</p>
-                    <p className={`text-lg font-medium ${reportResult.Report.categories["Correctly Diagnosed"] ? "text-green-400" : "text-red-400"}`}>
-                      {reportResult.Report.categories["Correctly Diagnosed"] ? "Correct" : "Incorrect"}
-                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-// issue #37 SubmitPannel -- END
+  // issue #37 SubmitPannel -- END
 
   const ShowPannel = () => {
 
@@ -1540,7 +1584,7 @@ const ViewSubmit = () => {
           window.location.reload(true);
           break;
         default:
-          return <DefaultPannel symptomData={symptomsData} setSymptomsData={setSymptomsData}/>;
+          return <DefaultPannel symptomData={symptomsData} setSymptomsData={setSymptomsData} />;
       }
     };
 
@@ -1559,9 +1603,8 @@ const ViewSubmit = () => {
           {buttons.map((button) => (
             <button
               key={button.id}
-              className={`mx-2 p-2 rounded-full hover:bg-gray-700 transition duration-150 ${
-                activeButton === button.id ? 'text-red-300' : ''
-              }`}
+              className={`mx-2 p-2 rounded-full hover:bg-gray-700 transition duration-150 ${activeButton === button.id ? 'text-red-300' : ''
+                }`}
               title={button.title}
               onClick={() => setActiveButton(button.id)}
             >
@@ -1584,35 +1627,35 @@ const ViewSubmit = () => {
 
       {/* Left Column: Canvas and Image */}
       <div ref={leftColRef} className="flex-shrink-0 w-full md:w-3/5 lg:w-4/6 relative ">
-         {/* Inner container to control max width based on original image dimensions */}
-         <div className="text-center">
+        {/* Inner container to control max width based on original image dimensions */}
+        <div className="text-center">
           <h1
-              className="text-3xl font-semibold mb-12 bg-white bg-opacity-15 inline-block p-2 backdrop-blur-[0.5px] rounded-lg border-[1px] border-white border-opacity-20"
-            >
-              Symptom Simulator
-            </h1> </div>
-            <div className="relative mx-auto" style={{ maxWidth: `${ORIGINAL_WIDTH}px` }}>
-              {/* Body Diagram Image - positioned behind canvas */}
-              <img
-                  src="images/body_diagram.svg" // Make sure this path is correct
-                  alt="Body Diagram"
-                  className="block w-full h-auto select-none" // Reduced opacity for dark theme
-                  style={{
-                      width: `${ORIGINAL_WIDTH * scale}px`,
-                      height: `${ORIGINAL_HEIGHT * scale}px`,
-                  }}
-                  draggable="false"
-              />
-              {/* Canvas Overlay for Symptoms */}
-              <canvas
-                  ref={canvasRef}
-                  className="absolute top-0 left-0 "
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseLeave}
-              />
-          </div>
+            className="text-3xl font-semibold mb-12 bg-white bg-opacity-15 inline-block p-2 backdrop-blur-[0.5px] rounded-lg border-[1px] border-white border-opacity-20"
+          >
+            Symptom Simulator
+          </h1> </div>
+        <div className="relative mx-auto" style={{ maxWidth: `${ORIGINAL_WIDTH}px` }}>
+          {/* Body Diagram Image - positioned behind canvas */}
+          <img
+            src="images/body_diagram.svg" // Make sure this path is correct
+            alt="Body Diagram"
+            className="block w-full h-auto select-none" // Reduced opacity for dark theme
+            style={{
+              width: `${ORIGINAL_WIDTH * scale}px`,
+              height: `${ORIGINAL_HEIGHT * scale}px`,
+            }}
+            draggable="false"
+          />
+          {/* Canvas Overlay for Symptoms */}
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 "
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          />
+        </div>
       </div>
 
       {/* Right Column: Instructions and Info Panel */}
@@ -1620,7 +1663,7 @@ const ViewSubmit = () => {
          <div className="flex-grow overflow-y-auto">
           {/* Allow scrolling if content exceeds height */}
           <ShowPannel />
-         </div>
+        </div>
       </div>
 
     </div>
