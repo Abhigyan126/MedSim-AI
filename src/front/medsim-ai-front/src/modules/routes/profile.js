@@ -11,10 +11,10 @@ const Profile = () => {
     const [showChat, setShowChat] = useState(false);
     const [showNavbar, setShowNavbar] = useState(false);
     const [reports, setReports] = useState([]);
-    const [userData, setUserData] = useState({ 
-        username: "", 
+    const [userData, setUserData] = useState({
+        username: "",
         email: "",
-        lastActive: new Date().toISOString() 
+        lastActive: new Date().toISOString()
     });
     const [reportStats, setReportStats] = useState({
         totalReports: 0,
@@ -47,8 +47,8 @@ const Profile = () => {
     const fetchUserData = async () => {
         try {
             const response = await API.get("/getusername");
-            setUserData({ 
-                username: response.data.username, 
+            setUserData({
+                username: response.data.username,
                 email: response.data.email,
                 lastActive: new Date().toISOString()
             });
@@ -60,12 +60,12 @@ const Profile = () => {
     const fetchAllReports = async () => {
         try {
             const response = await API.post("/get_reports", { action: "all" });
-            const sortedReports = response.data.sort((a, b) => 
+            const sortedReports = response.data.sort((a, b) =>
                 new Date(b.timestamp?.$date) - new Date(a.timestamp?.$date)
             );
             setReports(sortedReports);
             calculateReportStats(sortedReports);
-            
+
             const initialExpandedState = {};
             sortedReports.forEach(report => {
                 initialExpandedState[report._id?.$oid || `report-${report.timestamp}`] = false;
@@ -103,7 +103,7 @@ const Profile = () => {
                 <div>No date available</div>
             </div>
         );
-        
+
         try {
             const date = new Date(timestampObj.$date);
             const formattedDate = date.toISOString().split('T')[0];
@@ -111,7 +111,7 @@ const Profile = () => {
             const minutes = date.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             const formattedHours = hours % 12 || 12;
-            
+
             return (
                 <div className="text-right">
                     <div>{formattedDate}</div>
@@ -168,14 +168,14 @@ const Profile = () => {
             'Presentation': parseInt(report['Presentation Quality'] || 0),
             'Diagnosis': parseInt(report['Correctly Diagnosed'] || 0)
         };
-    
+
         // Validate all values are finite numbers
         Object.keys(metricsData).forEach(key => {
             if (!Number.isFinite(metricsData[key])) {
                 metricsData[key] = 0;
             }
         });
-    
+
         const customColors = [
             '#3b82f6', // blue-500
             '#10b981', // emerald-500
@@ -185,12 +185,12 @@ const Profile = () => {
             '#ec4899', // pink-500
             '#6366f1'  // indigo-500
         ];
-    
+
         return (
             <div className="mt-4 h-64 w-full">
                 <h4 className="text-sm font-medium text-gray-600 mb-2">Performance Metrics</h4>
-                <BarGraph 
-                    data={metricsData} 
+                <BarGraph
+                    data={metricsData}
                     bgColor="#f3f4f6"
                     axisColor="#6b7280"
                     gridColor="#e5e7eb"
@@ -231,7 +231,7 @@ const Profile = () => {
                 <div className="bg-white rounded-lg shadow mb-6 p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Overview</h2>
                     <hr className="border-t-4 border-gray-900 mb-2 w-20 rounded-full" />
-                                        
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {/* Activity Card */}
                         <div className="bg-gray-300 p-5 rounded-lg">
@@ -273,7 +273,7 @@ const Profile = () => {
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Latest Report</span>
                                     <span className="font-medium">
-                                        {reportStats.lastUpdated 
+                                        {reportStats.lastUpdated
                                             ? formatDate(reportStats.lastUpdated)
                                             : "No reports yet"}
                                     </span>
@@ -300,10 +300,10 @@ const Profile = () => {
                                 const globalIndex = indexOfFirstReport + index;
                                 const reportId = report._id?.$oid || `report-${globalIndex + 1}`;
                                 const isExpanded = expandedReports[reportId];
-                                
+
                                 return (
                                     <div key={reportId} className="bg-gray-300 rounded-lg overflow-hidden">
-                                        <div 
+                                        <div
                                             className="p-3 flex justify-between items-center cursor-pointer"
                                             onClick={() => toggleReport(reportId)}
                                         >
@@ -313,22 +313,22 @@ const Profile = () => {
                                             </div>
                                             <div className="flex items-center">
                                                 {formatDateTime(report.timestamp)}
-                                                <svg 
+                                                <svg
                                                     className={`w-5 h-5 ml-2 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
-                                                    fill="none" 
-                                                    stroke="currentColor" 
+                                                    fill="none"
+                                                    stroke="currentColor"
                                                     viewBox="0 0 24 24"
                                                 >
-                                                    <path 
-                                                        strokeLinecap="round" 
-                                                        strokeLinejoin="round" 
-                                                        strokeWidth={2} 
-                                                        d="M19 9l-7 7-7-7" 
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M19 9l-7 7-7-7"
                                                     />
                                                 </svg>
                                             </div>
                                         </div>
-                                        
+
                                         {isExpanded && (
                                             <div className="bg-gray-100 p-4 border-t border-gray-400">
                                                 <div className="flex flex-col md:flex-row gap-4">
@@ -359,7 +359,7 @@ const Profile = () => {
                                                                 ))}
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Performance Metrics - now takes full width on mobile, half on larger screens */}
                                                     <div className="w-full md:w-1/2">
                                                         {renderBarChart(report)}
@@ -381,11 +381,11 @@ const Profile = () => {
                                     >
                                         Previous
                                     </button>
-                                    
+
                                     <span className="text-gray-700">
                                         Page {currentPage} of {totalPages}
                                     </span>
-                                    
+
                                     <button
                                         onClick={() => paginate(currentPage + 1)}
                                         disabled={currentPage === totalPages}
@@ -405,29 +405,6 @@ const Profile = () => {
                             <p className="mt-1 text-gray-500">Your reports will appear here once generated.</p>
                         </div>
                     )}
-                </div>
-            </div>
-
-            {/* Compact CTA positioned just above footer */}
-            <div className="fixed bottom-11 left-0 right-0 bg-gray-700 text-white py-2 h-18 z-30">
-                <div className="container mx-auto text-center">
-                    <p className="text-gray-300 mb-1 text-sm">Check out our app</p>
-                    <div className="flex justify-center space-x-2">
-                        <button 
-                            type="button" 
-                            className="px-2 py-1 bg-white text-gray-900 border border-gray-900 hover:bg-blue-500 hover:text-white hover:border-white rounded-lg transition flex items-center text-sm"
-                        >
-                            <i className="fa-brands fa-apple mr-1"></i>
-                            Install
-                        </button>
-                        <button 
-                            type="button" 
-                            className="px-2 py-1 border border-white hover:bg-green-500 hover:text-gray-900 hover:border-gray-900 rounded-lg transition flex items-center text-sm"
-                        >
-                            <i className="fa-brands fa-android mr-1"></i>
-                            Install
-                        </button>
-                    </div>
                 </div>
             </div>
 
