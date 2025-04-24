@@ -360,7 +360,7 @@ export default function MedicalEmbeddings() {
           <div className="w-full md:w-2/3">
           <div className="bg-white rounded-xl shadow-lg p-4 h-full flex flex-col border border-amber-200 custom-scrollbar">
               {/* Top Section: Score, Target, New Game */}
-              <div className="flex justify-between items-start mb-3 gap-4">
+              <div className="flex justify-between items-start mb-1 gap-4">
                 <div className="text-left">
                   <h2 className="text-xl font-semibold text-amber-800">Score: {score}</h2>
                   <p className="text-xs text-gray-500 mt-1">
@@ -368,7 +368,7 @@ export default function MedicalEmbeddings() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className="p-2 bg-amber-100 rounded-lg text-center shadow-sm border border-amber-200 min-w-[150px]">
+                  <div className="p-0 bg-amber-100 rounded-lg text-center shadow-sm border border-amber-200 min-w-[150px]">
                     <p className="font-medium text-xs text-amber-700 uppercase tracking-wider">Target Recipe</p>
                     <p className="text-lg font-bold text-amber-900 break-words">
                       {targetDisease || "Loading..."}
@@ -376,7 +376,7 @@ export default function MedicalEmbeddings() {
                   </div>
                   <button
                     onClick={() => startNewGame()} // Always allow starting a new game
-                    className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 text-sm font-medium shadow transition-all hover:shadow-md w-full"
+                    className="bg-amber-600 text-white px-4 py-1 rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 text-sm font-medium shadow transition-all hover:shadow-md w-full"
                   >
                     ✨ New Recipe
                   </button>
@@ -385,7 +385,7 @@ export default function MedicalEmbeddings() {
 
               {/* Kadhai (cooking pot) area */}
               <div
-                className={`flex-grow relative flex justify-center -translate-y-14 items-center rounded-lg border-2 ${
+                className={`flex-grow relative flex justify-center items-center rounded-lg border-2 ${
                    !isGameFinished && isDraggingOverKadhai ? 'border-dashed border-amber-500 bg-amber-50' : 'border-transparent'
                 } transition-all duration-200`}
                 onDragOver={handleDragOver}
@@ -570,7 +570,7 @@ export default function MedicalEmbeddings() {
                     <button
                         onClick={handleFinalizeGuess}
                         disabled={!prediction} // Disable if no prediction is available yet
-                        className="bg-green-600 text-white px-6 py-2 -translate-y-14 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-base font-medium shadow transition-all hover:shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-base font-medium shadow transition-all hover:shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                         🥣 Finalize Recipe!
                     </button>
@@ -578,7 +578,7 @@ export default function MedicalEmbeddings() {
                )}
 
               {/* Prediction/Result Display */}
-              <div className={`p-3 rounded-lg mt-3 text-center -translate-y-14 transition-all duration-300 ease-in-out ${
+              <div className={`p-3 rounded-lg mt-3 text-center transition-all duration-300 ease-in-out ${
                 isGameFinished
                   ? `${gradeInfo.bg} border ${gradeInfo.border} shadow-md` // Use grade colors when finished
                   : prediction
