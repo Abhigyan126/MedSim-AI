@@ -5,6 +5,7 @@ import Homepage from './modules/routes/home';
 import Logout from './modules/routes/logout';
 import Profile from './modules/routes/profile';
 import Simulator from './modules/routes/symptom';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import About from './modules/routes/about';
 import DiseaseCraft from './modules/routes/diseaseCraft';
 import SymptomTree from './modules/routes/symptomtree';
