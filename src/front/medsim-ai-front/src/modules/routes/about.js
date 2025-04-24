@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
  import Chatbot from "../components/chatbot";
  import Sidebar from "../components/sidebar";
  import "../../styles/blob.css";
- 
+
  // issue #44 :About us page - start
 // Developer Data
 const developers = [
@@ -145,23 +145,23 @@ const AboutContent = () => {
   );
 };
 
- 
+
  const AboutUs = () => {
      const [showChat, setShowChat] = useState(false);
      const [showNavbar, setShowNavbar] = useState(false);
- 
+
      const handleNavbarClick = () => {
          setShowNavbar((prev) => !prev);
      };
- 
+
      return (
-         <div> 
+         <div>
              {showNavbar && <Sidebar username="" name="" />}
- 
+
              <div>
                  {<AboutContent />}
              </div>
- 
+
              {/* Bottom Bar */}
              <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white py-2 shadow-md flex justify-between items-center">
                  <div className="ml-4">
@@ -182,10 +182,10 @@ const AboutContent = () => {
                      </button>
                  </div>
              </div>
- 
+
              <Chatbot showChat={showChat} setShowChat={setShowChat} />
          </div>
      );
  };
- 
+
  export default AboutUs;

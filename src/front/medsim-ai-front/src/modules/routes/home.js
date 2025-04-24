@@ -9,13 +9,14 @@ import BarGraph from "../components/bargraph";
 
 const SymptomSimulatorCard = () => {
   const navigate = useNavigate()
+  const [ishovering, setIsHovering] = useState(false);
   return (
     <div className="bg-gray-900 rounded-xl shadow-lg overflow-hidden p-0 h-96 w-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-      <div className="h-full flex flex-col items-center justify-between p-6 bg-gradient-to-br from-gray-900 via-black to-blue-900 transition-all duration-300 hover:from-gray-900 hover:to-blue-950">
+      <div className="h-full flex flex-col items-center justify-between p-6 bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900 transition-all duration-300 hover:from-gray-900 hover:to-blue-950">
         {/* Logo and Title */}
         <div className="text-center mb-2">
           <h2 className="font-bold text-3xl text-blue-300 font-serif tracking-wider">SymptomSimulator</h2>
-          <p className="text-blue-400 italic">Visualize health conditions</p>
+          {!ishovering ? (<p className="text-blue-400 italic">Simuate any and all diseases</p>):null}
         </div>
 
         {/* Body SVG with Zoom Effect */}
@@ -53,11 +54,19 @@ const SymptomSimulatorCard = () => {
         </div>
 
         {/* Marketing text that expands on hover */}
-        <div className="mt-2 text-center overflow-hidden transition-all duration-500 group">
-          <p className="text-blue-300 text-sm group-hover:hidden">Simulate symptoms on an interactive body model</p>
-          <div className="hidden group-hover:block">
-            <p className="text-blue-200 text-sm">Map medical symptoms, track progression, and share detailed reports with healthcare providers</p>
-          </div>
+        <div
+              className="mt-2 text-center overflow-hidden transition-all duration-500"
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
+            >
+              {!ishovering && (
+                <p className="text-blue-300 text-sm">Simulate symptoms on an interactive body model</p>
+              )}
+              {ishovering && (
+                <p className="relative text-blue-200 text-sm ">
+                  Leverage AI for symptom mapping, virtual patient encounters, and automated diagnostic report analysis.
+                </p>
+              )}
 
           {/* Call to action */}
           <button className="mt-3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-md"
@@ -468,52 +477,69 @@ const Homepage = () => {
                                 </div>
 
                                 <div className="flex-1 overflow-hidden">
-                                    {activeMetricView === 'text' ? (
-                                        <div className="p-5 h-full overflow-y-auto">
-                                            <div className="space-y-4">
-                                                {Object.entries(averageMetrics).map(([key, value]) => (
-                                                    <div key={key} className="flex flex-col">
-                                                        <div className="flex justify-between items-center mb-1">
-                                                            <span className="text-sm font-medium text-gray-700 flex items-center">
-                                                                <span className={`inline-block w-3 h-3 rounded-full ${getColorForMetric(key)} mr-2`}></span>
-                                                                {key.replace(/_/g, ' ')}
-                                                            </span>
-                                                            <span className={`text-sm font-semibold ${getTextColorForMetric(key)}`}>
-                                                                {value}/10
-                                                            </span>
-                                                        </div>
-                                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                            <div
-                                                                className={`${getColorForMetric(key).replace('bg-', 'bg-')} h-2 rounded-full`}
-                                                                style={{ width: `${value * 10}%` }}
-                                                            ></div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-2 h-full flex flex-col">
-                                            <div className="flex-1">
-                                                <BarGraph
-                                                    data={averageMetrics}
-                                                    bgColor="#ffffff"
-                                                    axisColor="#4b5563"
-                                                    gridColor="#e5e7eb"
-                                                    textColor="#1f2937"
-                                                    colors={[
-                                                        '#3b82f6', // blue-500
-                                                        '#10b981', // emerald-500
-                                                        '#ef4444', // red-500
-                                                        '#8b5cf6', // violet-500
-                                                        '#eab308', // yellow-500
-                                                        '#ec4899', // pink-500
-                                                        '#6366f1'  // indigo-500
-                                                    ]}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
+                                  {activeMetricView === 'text' ? (
+                                      <div className="p-5 h-full overflow-y-auto">
+                                          <div className="space-y-4">
+                                              {Object.entries(averageMetrics).map(([key, value]) => {
+                                                  if (key === "Correctly Diagnosed") {
+                                                      return (
+                                                          <div key={key} className="flex justify-between items-center text-sm font-medium text-gray-700">
+                                                              <span className="flex items-center">
+                                                                  <span className="inline-block w-3 h-3 rounded-full bg-gray-500 mr-2"></span>
+                                                                  {key.replace(/_/g, ' ')}
+                                                              </span>
+                                                              <span className="text-sm font-semibold text-gray-800 py-2">
+                                                                  {value === 1 ? <p className="bg-green-600 py-1 px-2 text-white rounded-xl border-[1px] border-green-800">Mostly Correctly Diagnosed</p> : <p className="bg-red-600 py-1 px-2 text-white rounded-xl border-[1px] border-red-800">Mostly Incorrectly Diagnosed</p>}
+                                                              </span>
+                                                          </div>
+                                                      );
+                                                  }
+
+                                                  return (
+                                                      <div key={key} className="flex flex-col">
+                                                          <div className="flex justify-between items-center mb-1">
+                                                              <span className="text-sm font-medium text-gray-700 flex items-center">
+                                                                  <span className={`inline-block w-3 h-3 rounded-full ${getColorForMetric(key)} mr-2`}></span>
+                                                                  {key.replace(/_/g, ' ')}
+                                                              </span>
+                                                              <span className={`text-sm font-semibold ${getTextColorForMetric(key)}`}>
+                                                                  {value}/10
+                                                              </span>
+                                                          </div>
+                                                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                              <div
+                                                                  className={`${getColorForMetric(key).replace('bg-', 'bg-')} h-2 rounded-full`}
+                                                                  style={{ width: `${value * 10}%` }}
+                                                              ></div>
+                                                          </div>
+                                                      </div>
+                                                  );
+                                              })}
+                                          </div>
+                                      </div>
+                                  ) : (
+                                      <div className="p-2 h-full flex flex-col">
+                                          <div className="flex-1">
+                                              <BarGraph
+                                                  data={Object.fromEntries(Object.entries(averageMetrics).filter(([key]) => key !== "Correctly Diagnosed"))}
+                                                  bgColor="#ffffff"
+                                                  axisColor="#4b5563"
+                                                  gridColor="#e5e7eb"
+                                                  textColor="#1f2937"
+                                                  colors={[
+                                                      '#3b82f6', // blue-500
+                                                      '#10b981', // emerald-500
+                                                      '#ef4444', // red-500
+                                                      '#8b5cf6', // violet-500
+                                                      '#eab308', // yellow-500
+                                                      '#ec4899', // pink-500
+                                                      '#6366f1'  // indigo-500
+                                                  ]}
+                                              />
+                                          </div>
+                                      </div>
+                                  )}
+
                                 </div>
                             </div>
                         )}
