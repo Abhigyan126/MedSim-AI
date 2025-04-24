@@ -54,7 +54,7 @@ function LoginForm() {
       message: "Email format is example@email.com",
     },
     password: {
-      regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$/,
       message: "Minimum 8 characters long with uppercase, lowercase, number & special character.",
     },
   };
@@ -199,7 +199,7 @@ function SignupForm({ setActiveForm }) {
       message: "Invalid email format. Use example@email.com",
     },
     password: {
-      regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$/,
       message: "Password must be at least 8 characters with uppercase, lowercase, number, and special character.",
     },
   };
