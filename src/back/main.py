@@ -180,7 +180,7 @@ def logout():
 def auth_check():
     return jsonify({"message": "Authenticated", "user_id": get_jwt_identity()}), 200
 
-#retuen the username for a given cookie token
+#return the username for a given cookie token
 @app.route("/getusername", methods=["GET"])
 @jwt_required()
 def getusername():
@@ -230,7 +230,9 @@ def get_symptoms():
         disease = disease.lower().rstrip()
         if not disease:
             return jsonify({"error": "Disease is required in the request body"}), 400
-
+        patientInfo = data.get("Info", None)
+        if not patientInfo:
+            return jsonify({"error": "patientInfo is required in the request body"}), 400
         use_cache = random.random() <= 0.7
         if use_cache:
             cached = db_symptom_cache.get_cached_symptoms(disease)
@@ -244,7 +246,7 @@ def get_symptoms():
       "severity": 5,
       "location": "Head"
     } '''
-        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema},  also keep in mind that severity should be in numbers datatype not string in json and must be below 5 and non negetive. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible"
+        prompt = f"You are A paitent visiting a doctor, your job is to tell the doctor your symptoms for the following disease {disease}. {schema},  also keep in mind that severity should be in numbers datatype not string in json and must be below 5 and non negetive. provide the output in a list of jsons, the following are the possible locations {locations}. Dont give null as location give some system name if its not there, but please try to kepp the names available as much as possible. here is info regarding the paitent to simulate please make symptoms relevent to the charachterstic of the patient ifno: {patientInfo}"
         response = llm.model(prompt)
         parsed = json.loads(response)
         validation = schema_validator.validate(parsed)
@@ -330,6 +332,7 @@ def generateReport():
     response = data.get("userResponse", None)
     chatHistory = data.get("ChatHistory", None)
     disease = data.get("disease", None)
+    paitentInfo = data.get("Info", None)
 
     # Required field checks
     if not disease:
@@ -338,6 +341,9 @@ def generateReport():
         return jsonify({"error": "response is required in the request body"}), 400
     if not symptoms:
         return jsonify({"error": "symptoms is required in the request body"}), 400
+    if not paitentInfo:
+        return jsonify({"error": "Patient info is required in the request body"}), 400
+
 
     # JSON schema for validating the LLM report
     response_schema = {
@@ -388,7 +394,7 @@ def generateReport():
     # Construct prompt strictly as JSON including the schema and desired output structure
     payload = {
         "role": "You are a medical professor",
-        "task": "Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10. the symptoms provided are by the paitent and not by the doctor so use it as a reference to gudge doctor work in identifying disease using the symptoms",
+        "task": "Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10. While generating the report, do consider the patientInfo: {patientInfo}",
         "inputs": {
             "symptoms": symptoms,
             "doctor_response": response,
