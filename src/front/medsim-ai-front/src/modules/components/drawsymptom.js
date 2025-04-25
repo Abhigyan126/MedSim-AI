@@ -76,6 +76,8 @@ function SymptomVisualizer({ coordinatesData = [] }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChatbotLoading, setIschatbotLoading] = useState(false);
   const [patientInfo_, setPatientInfo_] = useState({});
+  const [isBoxVisible, setIsBoxVisible] = useState(false);
+
 
 
 
@@ -1621,6 +1623,60 @@ function SymptomVisualizer({ coordinatesData = [] }) {
     );
   };
 
+  const toggleBoxVisibility = () => {
+    setIsBoxVisible(!isBoxVisible);
+  };
+
+  const renderPatientInfoBox = () => {
+    const calculateBMI = (height, weight) => {
+      if (height && weight) {
+        // Assuming height is in cm and weight is in kg
+        const heightInMeters = height / 100;
+        if (heightInMeters > 0) {
+          const bmi = weight / (heightInMeters * heightInMeters);
+          return parseFloat(bmi.toFixed(2)); // Round to 2 decimal places
+        }
+      }
+      return '?';
+    };
+
+    const renderStaticField = (label, value, titleText = null) => {
+      let displayedValue = value;
+      if (typeof value === 'string' && value.length > 8) {
+        displayedValue = value.substring(0, 8) + '..';
+      }
+
+      return (
+        <div className="space-y-1 select-none">
+          <p
+            className="text-blue-100 text-xs cursor-default"
+            title={titleText !== null ? titleText : (typeof value === 'string' && value.length > 8 ? value : '')}
+          >
+            {label}
+          </p>
+          <div className="w-16 p-1 bg-gray-700 border border-gray-600 rounded text-xs text-white text-left">
+            {displayedValue === null || displayedValue === undefined ? '?' : displayedValue}
+          </div>
+        </div>
+      );
+    };
+
+    const bmiValue = calculateBMI(patientInfo_?.height, patientInfo_?.weight);
+
+    return (
+      <div className=" py-4 px-5 mb-8 relative">
+        <div className="grid grid-cols-3 grid-rows-2 gap-5">
+          {renderStaticField('Full Name', patientInfo_?.name)}
+          {renderStaticField('Age', patientInfo_?.age)}
+          {renderStaticField('Gender', patientInfo_?.gender)}
+          {renderStaticField('Height', patientInfo_?.height, 'Height in cm')}
+          {renderStaticField('Weight', patientInfo_?.weight, 'Weight in Kg')}
+          {renderStaticField('BMI', bmiValue)}
+        </div>
+      </div>
+    );
+  };
+
   return (
     // Main container with dark theme and flex layout
     <div ref={containerRef} className={`flex flex-col bgforsim md:flex-row md:p-2 gap-6 md:gap-8 ${DARK_THEME_BG} ${DARK_THEME_TEXT} min-h-screen font-sans`}>
@@ -1628,12 +1684,26 @@ function SymptomVisualizer({ coordinatesData = [] }) {
       {/* Left Column: Canvas and Image */}
       <div ref={leftColRef} className="flex-shrink-0 w-full md:w-3/5 lg:w-4/6 relative ">
         {/* Inner container to control max width based on original image dimensions */}
-        <div className="text-center">
+        <div className="relative text-center">
           <h1
             className="text-3xl font-semibold mb-12 bg-white bg-opacity-15 inline-block p-2 backdrop-blur-[0.5px] rounded-lg border-[1px] border-white border-opacity-20"
           >
             Symptom Simulator
-          </h1> </div>
+          </h1>
+          <span className="absolute top-0 -right-10 mt-2 mr-4">
+                  <button className="" onClick={toggleBoxVisibility}>
+                    <User className="rounded-3xl bg-gray-800 p-1 w-10 h-10 border-[1px] border-gray-500" />
+                  </button>
+          </span>
+
+          {isBoxVisible && (
+            <div className="absolute top-16 right-4 w-64 h-40 bg-gray-800/80 border-[1px] border-gray-500 rounded-md shadow-md z-50 backdrop-blur-lg">
+              {/* Content of your box will go here */}
+              {renderPatientInfoBox()}
+            </div>
+          )}
+
+        </div>
         <div className="relative mx-auto" style={{ maxWidth: `${ORIGINAL_WIDTH}px` }}>
           {/* Body Diagram Image - positioned behind canvas */}
           <img
