@@ -1,3 +1,6 @@
+from sqlite3.dbapi2 import Error
+
+
 class SchemaValidator:
     def __init__(self, schema):
         self.schema = schema
@@ -28,6 +31,8 @@ class SchemaValidator:
                 return f"{path} should be >= {schema['minimum']}"
             if "maximum" in schema and data > schema["maximum"]:
                 return f"{path} should be <= {schema['maximum']}"
+        else:
+            raise Exception("Validation type not specified, reached end of comaparision")
 
         return None  # Valid
 

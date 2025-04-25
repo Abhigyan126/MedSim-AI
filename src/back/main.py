@@ -374,16 +374,16 @@ def generateReport():
                                 "type": "object",
                                 "additionalProperties": False,
                                 "properties": {
-                                    "Symptoms Relevance": {"type": "integer"},
-                                    "Clinical Reasoning": {"type": "integer"},
-                                    "RED flag identification": {"type": "integer"},
-                                    "Prescription understanding": {"type": "integer"}
+                                    "Symptoms Relevance": {"type": "number"},
+                                    "Clinical Reasoning": {"type": "number"},
+                                    "RED flag identification": {"type": "number"},
+                                    "Prescription understanding": {"type": "number"}
                                 },
                                 "required": ["Symptoms Relevance", "Clinical Reasoning", "RED flag identification", "Prescription understanding"]
                             },
-                            "Communication style": {"type": "integer"},
-                            "Presentation Quality": {"type": "integer"},
-                            "Correctly Diagnosed": {"type": "integer"}
+                            "Communication style": {"type": "number"},
+                            "Presentation Quality": {"type": "number"},
+                            "Correctly Diagnosed": {"type": "number"}
                         }
                     }
                 }
@@ -394,12 +394,10 @@ def generateReport():
     # Construct prompt strictly as JSON including the schema and desired output structure
     payload = {
         "role": "You are a medical professor",
-        "task": f"Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10. While generating the report, do consider the patientInfo: {paitentInfo}",
+        "task": f"Evaluate a doctor's diagnosys to a virtual patient and generate a structured report based on the disease provided. also the correctly diagnosed is either 0 or 1. give positive or negeative feedback, negetive feedback should be whatever they have done wrong not what they could have done , keep this also in consideration but with less wieght in response json correctly aligned to its respective categories. grade them fairly 0 min max 10. While generating the report, do consider the patientInfo: {paitentInfo} . this is the disease that is thee correct answer this is not given by the doctor use this for performing analysis {disease}. these are the symptoms that is expressed by the patient to the doctor symptoms: {symptoms} thses are for sample to analyse report and is no way given or related to doctor use this to check if doctor remark is correct .",
         "inputs": {
-            "symptoms": symptoms,
             "doctor_response": response,
             "chat_history": chatHistory,
-            "disease": disease,
         },
         "output_schema": response_schema,
         "output_instructions": "Return a JSON object with root key 'Report' matching the provided schema exactly"
