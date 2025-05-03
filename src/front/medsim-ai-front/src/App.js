@@ -9,7 +9,6 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import About from './modules/routes/about';
 import DiseaseCraft from './modules/routes/diseaseCraft';
 import SymptomTree from './modules/routes/symptomtree';
-
 function App() {
   return (
     <Router>
