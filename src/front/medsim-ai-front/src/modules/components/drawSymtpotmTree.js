@@ -1,616 +1,625 @@
 import { useState, useEffect } from 'react';
-import * as ort from 'onnxruntime-web';
+import { ChevronRight, RefreshCw, AlertCircle, CheckCircle, HelpCircle, X, ArrowRight, ThumbsUp, ThumbsDown, FileText } from 'lucide-react';
 
-export default function DrawSymptomTree() {
-  const [isModelLoaded, setIsModelLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+// Mock data in case we need to use it before fetch completes
+const mockData = {
+  diseases: ["Loading..."],
+  symptoms: ["Loading..."],
+  disease_symptom_profiles: {}
+};
+
+export default function DiagnosticApp() {
+  // Application state
+  const [diagnosticData, setDiagnosticData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [session, setSession] = useState(null);
-  const [metadata, setMetadata] = useState(null);
+  const [currentPhase, setCurrentPhase] = useState('welcome'); // welcome, initial, followup, results
+  const [currentSymptomIndex, setCurrentSymptomIndex] = useState(0);
+  const [reportedSymptoms, setReportedSymptoms] = useState(new Set());
+  const [deniedSymptoms, setDeniedSymptoms] = useState(new Set());
+  const [uncertainSymptoms, setUncertainSymptoms] = useState(new Set());
+  const [initialSymptoms, setInitialSymptoms] = useState([]);
+  const [followUpSymptoms, setFollowUpSymptoms] = useState([]);
+  const [topCandidates, setTopCandidates] = useState([]);
+  const [diagnosticResults, setDiagnosticResults] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
-  // Akinator state
-  const [askedSymptoms, setAskedSymptoms] = useState(new Set());
-  const [currentSymptoms, setCurrentSymptoms] = useState(null);
-  const [yesSymptoms, setYesSymptoms] = useState([]);
-  const [noSymptoms, setNoSymptoms] = useState([]);
-  const [questionCount, setQuestionCount] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [diagnosis, setDiagnosis] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [showingDiagnosis, setShowingDiagnosis] = useState(false);
-  const [symptomPools, setSymptomPools] = useState(null);
-
-  const MIN_QUESTIONS = 8;
-  const MAX_QUESTIONS = 25;
-  const CONFIDENCE_THRESHOLD = 0.6;
-
-  // Load the ONNX model and metadata on component mount
+  // Load diagnostic data
   useEffect(() => {
-    async function loadModel() {
+    async function fetchData() {
       try {
-        setIsLoading(true);
-
-        // Load metadata first
-        const metadataResponse = await fetch('model/medical_akinator_metadata.json');
-        if (!metadataResponse.ok) {
-          throw new Error('Failed to load metadata');
+        // In a real application, this would fetch from your server
+        // For demo purposes, we'll use a direct import or mock data URL
+        const response = await fetch("model/disease_diagnostic_web_data.json");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
         }
-        const metadataJson = await metadataResponse.json();
-        setMetadata(metadataJson);
+        const data = await response.json();
+        setDiagnosticData(data);
 
-        // Initialize current symptoms array with zeros
-        const symptomsArray = new Array(metadataJson.symptomNames.length).fill(0);
-        setCurrentSymptoms(symptomsArray);
+        // Calculate starting symptoms
+        const startingSymptoms = getStartingSymptoms(data);
+        setInitialSymptoms(startingSymptoms);
 
-        // Initialize symptom pools for the questioning strategy
-        initializeSymptomPools(metadataJson.symptomNames);
-
-        // Load ONNX model
-        const modelResponse = await fetch('model/medical_akinator_rf_model.onnx');
-        if (!modelResponse.ok) {
-          throw new Error('Failed to load ONNX model');
-        }
-
-        const modelArrayBuffer = await modelResponse.arrayBuffer();
-        const newSession = await ort.InferenceSession.create(modelArrayBuffer);
-
-        // Log input and output names to help with debugging
-        console.log('Model input names:', newSession.inputNames);
-        console.log('Model output names:', newSession.outputNames);
-
-        setSession(newSession);
-        setIsModelLoaded(true);
-        setIsLoading(false);
+        setLoading(false);
       } catch (err) {
-        console.error('Error loading model:', err);
-        setError(err.message);
-        setIsLoading(false);
+        console.error("Error loading diagnostic data:", err);
+        setError(`Failed to load diagnostic data: ${err.message}`);
+        // For demo, we'll use mock data if fetch fails
+        setDiagnosticData(mockData);
+        setLoading(false);
       }
     }
 
-    loadModel();
+    fetchData();
   }, []);
 
-  // Initialize symptom pools for the questioning strategy
-  const initializeSymptomPools = (symptomNames) => {
-    // For simplicity, we'll just divide symptoms into three tiers randomly
-    // In a real application, you might want to use feature importances from the model
-    const shuffledSymptoms = [...symptomNames].sort(() => Math.random() - 0.5);
-    const numSymptoms = symptomNames.length;
+  // Helper functions
+  const getStartingSymptoms = (data) => {
+    // Get symptoms that appear in the most diseases (most informative)
+    const diseaseCount = {};
 
-    const topCutoff = Math.min(30, Math.floor(numSymptoms / 3));
-    const midCutoff = Math.min(100, Math.floor(numSymptoms * 2 / 3));
+    data.symptoms.forEach(symptom => {
+      diseaseCount[symptom] = 0;
+    });
 
-    const pools = {
-      topSymptoms: shuffledSymptoms.slice(0, topCutoff),
-      midSymptoms: shuffledSymptoms.slice(topCutoff, midCutoff),
-      otherSymptoms: shuffledSymptoms.slice(midCutoff),
-    };
+    Object.entries(data.disease_symptom_profiles).forEach(([disease, profile]) => {
+      profile.common_symptoms.forEach(symptom => {
+        diseaseCount[symptom] = (diseaseCount[symptom] || 0) + 1;
+      });
+    });
 
-    setSymptomPools(pools);
-    // Ask first question after initializing pools
-    askNextQuestion(pools, new Set(), 0, symptomNames);
+    // Sort symptoms by appearance count and return top ones that appear in multiple diseases
+    return Object.entries(diseaseCount)
+      .sort((a, b) => b[1] - a[1])
+      .filter(([_, count]) => count > 1)
+      .slice(0, 5)
+      .map(([symptom]) => symptom);
   };
 
-  // Ask next question
-  const askNextQuestion = (pools, asked, count, allSymptoms = metadata?.symptomNames) => {
-    if (!pools || !allSymptoms) return;
-
-    // If we've asked the maximum number of questions, show diagnosis
-    if (count >= MAX_QUESTIONS) {
-      setGameOver(true);
-      getDiagnosisWithoutInference();
-      return;
+  const processResponse = (symptom, response) => {
+    if (response === "yes") {
+      setReportedSymptoms(prev => new Set([...prev, symptom]));
+    } else if (response === "no") {
+      setDeniedSymptoms(prev => new Set([...prev, symptom]));
+    } else { // unsure
+      setUncertainSymptoms(prev => new Set([...prev, symptom]));
     }
 
-    // Continue asking questions
-    selectNextSymptom(pools, asked, allSymptoms);
+    // Move to next symptom
+    if (currentPhase === 'initial' && currentSymptomIndex < initialSymptoms.length - 1) {
+      setCurrentSymptomIndex(currentSymptomIndex + 1);
+    } else if (currentPhase === 'initial' && currentSymptomIndex >= initialSymptoms.length - 1) {
+      // Initial phase complete - calculate results and move to follow-up
+      const scores = calculateDiseaseScores();
+      const candidates = scores.slice(0, 3).map(([disease]) => disease);
+      setTopCandidates(candidates);
+
+      // Generate follow-up questions
+      const followUp = generateFollowUpQuestions(candidates);
+      setFollowUpSymptoms(followUp);
+
+      // Move to follow-up phase
+      setCurrentPhase('followup');
+      setCurrentSymptomIndex(0);
+    } else if (currentPhase === 'followup' && currentSymptomIndex < followUpSymptoms.length - 1) {
+      setCurrentSymptomIndex(currentSymptomIndex + 1);
+    } else if (currentPhase === 'followup' && currentSymptomIndex >= followUpSymptoms.length - 1) {
+      // All questions complete - show final results
+      const results = analyzeResults();
+      setDiagnosticResults(results);
+      setCurrentPhase('results');
+    }
   };
 
-  // Select the next symptom to ask about
- const selectNextSymptom = (pools, asked, allSymptoms) => {
-     if (!pools || !allSymptoms) {
-       console.error("Symptom pools or all symptoms list not available.");
-       setGameOver(true); // Ensure game ends if essential data is missing
-       getDiagnosisWithoutInference();
-       return;
-     }
+  const calculateDiseaseScores = () => {
+    if (!diagnosticData) return [];
 
-     let symptomToAsk = null; // Variable to hold the symptom found
+    const diseaseScores = {};
 
-     // 1. Targeted questioning based on confirmed symptoms
-     if (yesSymptoms.length > 0) {
-       const potentialDiseases = [];
-       
-       // This is a simplified version of the disease-symptom map from getDiagnosisWithoutInference
-       const diseaseSymptomMap = {
-         "Common Cold": ["runny_nose", "congestion", "sneezing", "sore_throat", "cough", "headache", "mild_fever"],
-         "Influenza": ["high_fever", "body_aches", "fatigue", "cough", "headache", "sore_throat", "chills"],
-         "COVID-19": ["fever", "dry_cough", "fatigue", "loss_of_taste", "loss_of_smell", "shortness_of_breath"],
-         "Gastroenteritis": ["nausea", "vomiting", "diarrhea", "abdominal_pain", "stomach_cramps", "fever"],
-         "Migraine": ["severe_headache", "light_sensitivity", "sound_sensitivity", "nausea", "vomiting"],
-         "Pneumonia": ["high_fever", "cough_with_phlegm", "shortness_of_breath", "chest_pain", "fatigue"],
-         // Add more disease-symptom mappings as needed
-       };
-       
-       Object.entries(diseaseSymptomMap).forEach(([disease, symptoms]) => {
-         if (yesSymptoms.some(s => symptoms.includes(s))) {
-           const unaskedSymptoms = symptoms.filter(s => !asked.has(s));
-           if (unaskedSymptoms.length > 0) {
-             potentialDiseases.push({
-               disease,
-               unaskedSymptoms
-             });
-           }
-         }
-       });
-       
-       if (potentialDiseases.length > 0) {
-         const selectedDisease = potentialDiseases[Math.floor(Math.random() * potentialDiseases.length)];
-         const unasked = selectedDisease.unaskedSymptoms;
-         
-         if (unasked.length > 0) {
-           symptomToAsk = unasked[Math.floor(Math.random() * unasked.length)];
-           // We found a targeted symptom, don't proceed to pool logic in this call
-         }
-       }
-     }
-     
-     // 2. Fallback to general pools if no targeted symptom was found
-     if (!symptomToAsk) {
-       let poolOptions = [];
-       
-       if (questionCount < 15) {
-         poolOptions = [...pools.topSymptoms];
-       } else if (questionCount < 25) {
-         poolOptions = [...pools.midSymptoms];
-       } else {
-         poolOptions = [...pools.otherSymptoms];
-       }
-       
-       const availableSymptoms = poolOptions.filter(s => !asked.has(s));
-       
-       if (availableSymptoms.length > 0) {
-         const shuffled = availableSymptoms.sort(() => Math.random() - 0.5);
-         symptomToAsk = shuffled[0];
-       } else {
-         // If current pool exhausted, check all pools
-         const allPoolsSymptoms = [...pools.topSymptoms, ...pools.midSymptoms, ...pools.otherSymptoms];
-         const remainingSymptoms = allPoolsSymptoms.filter(s => !asked.has(s));
-         
-         if (remainingSymptoms.length > 0) {
-           symptomToAsk = remainingSymptoms[Math.floor(Math.random() * remainingSymptoms.length)];
-         }
-       }
-     }
+    Object.entries(diagnosticData.disease_symptom_profiles).forEach(([disease, profile]) => {
+      let score = 0;
+      let symptomCount = 0;
 
-     // 3. Set the current question or end the game
-     if (symptomToAsk) {
-       setCurrentQuestion(symptomToAsk);
-     } else {
-       // If no symptom was found through any method, all applicable symptoms have been asked
-       console.log("All relevant symptoms exhausted. Ending game.");
-       setGameOver(true);
-       getDiagnosisWithoutInference();
-     }
-   };
+      // Calculate score based on reported symptoms
+      [...reportedSymptoms].forEach(symptom => {
+        if (profile.symptom_prevalence && profile.symptom_prevalence[symptom]) {
+          const prevalence = profile.symptom_prevalence[symptom];
+          score += prevalence;
+          symptomCount++;
+        }
+      });
 
+      // Penalize for denied key symptoms
+      [...deniedSymptoms].forEach(symptom => {
+        if (profile.common_symptoms && profile.common_symptoms.includes(symptom)) {
+          const prevalence = profile.symptom_prevalence?.[symptom] || 0;
+          if (prevalence > 0.5) {
+            score -= prevalence * 0.5;
+          }
+        }
+      });
 
-  // Get diagnosis safely without risking inference errors
-  const getDiagnosisWithoutInference = () => {
-    // Create a more comprehensive disease-symptom mapping
-    const diseaseSymptomMap = {
-      "Common Cold": {
-        primarySymptoms: ["runny_nose", "congestion", "sneezing", "sore_throat", "cough"],
-        secondarySymptoms: ["headache", "mild_fever", "fatigue", "body_aches"],
-        weight: 0.7
-      },
-      "Influenza": {
-        primarySymptoms: ["high_fever", "body_aches", "fatigue", "cough", "headache"],
-        secondarySymptoms: ["sore_throat", "runny_nose", "congestion", "chills"],
-        weight: 0.8
-      },
-      "COVID-19": {
-        primarySymptoms: ["fever", "dry_cough", "fatigue", "loss_of_taste", "loss_of_smell"],
-        secondarySymptoms: ["sore_throat", "headache", "body_aches", "shortness_of_breath", "congestion"],
-        weight: 0.85
-      },
-      "Allergic Rhinitis": {
-        primarySymptoms: ["sneezing", "runny_nose", "itchy_eyes", "congestion"],
-        secondarySymptoms: ["headache", "fatigue", "cough", "sore_throat"],
-        weight: 0.65
-      },
-      "Migraine": {
-        primarySymptoms: ["severe_headache", "light_sensitivity", "sound_sensitivity", "nausea"],
-        secondarySymptoms: ["vomiting", "blurred_vision", "dizziness", "fatigue"],
-        weight: 0.75
-      },
-      "Gastroenteritis": {
-        primarySymptoms: ["nausea", "vomiting", "diarrhea", "abdominal_pain", "stomach_cramps"],
-        secondarySymptoms: ["fever", "headache", "fatigue", "dehydration"],
-        weight: 0.72
-      },
-      "Peptic Ulcer": {
-        primarySymptoms: ["abdominal_pain", "burning_stomach_pain", "nausea"],
-        secondarySymptoms: ["bloating", "heartburn", "weight_loss", "vomiting"],
-        weight: 0.68
-      },
-      "Pneumonia": {
-        primarySymptoms: ["high_fever", "cough_with_phlegm", "shortness_of_breath", "chest_pain"],
-        secondarySymptoms: ["fatigue", "sweating", "chills", "headache", "confusion"],
-        weight: 0.82
-      },
-      "Bronchitis": {
-        primarySymptoms: ["persistent_cough", "mucus_production", "wheezing", "chest_discomfort"],
-        secondarySymptoms: ["fatigue", "mild_fever", "shortness_of_breath", "chills"],
-        weight: 0.7
-      },
-      "Urinary Tract Infection": {
-        primarySymptoms: ["burning_urination", "frequent_urination", "urgent_urination", "cloudy_urine"],
-        secondarySymptoms: ["pelvic_pain", "low_fever", "fatigue", "lower_back_pain"],
-        weight: 0.75
-      },
-      "Hypertension": {
-        primarySymptoms: ["headache", "shortness_of_breath", "nosebleeds"],
-        secondarySymptoms: ["dizziness", "chest_pain", "blurred_vision", "fatigue"],
-        weight: 0.6
-      },
-      "Type 2 Diabetes": {
-        primarySymptoms: ["frequent_urination", "increased_thirst", "increased_hunger", "fatigue"],
-        secondarySymptoms: ["blurred_vision", "slow_healing_wounds", "numbness_in_extremities", "weight_loss"],
-        weight: 0.78
-      },
-      "Osteoarthritis": {
-        primarySymptoms: ["joint_pain", "joint_stiffness", "reduced_mobility", "swelling"],
-        secondarySymptoms: ["joint_tenderness", "grating_sensation", "bone_spurs", "fatigue"],
-        weight: 0.72
-      },
-      "Rheumatoid Arthritis": {
-        primarySymptoms: ["joint_pain", "joint_swelling", "joint_stiffness", "fatigue"],
-        secondarySymptoms: ["fever", "weight_loss", "weakness", "multiple_joint_involvement"],
-        weight: 0.75
-      },
-      "Anxiety Disorder": {
-        primarySymptoms: ["excessive_worry", "restlessness", "irritability", "difficulty_concentrating"],
-        secondarySymptoms: ["fatigue", "muscle_tension", "sleep_problems", "increased_heart_rate"],
-        weight: 0.65
-      },
-      "Depression": {
-        primarySymptoms: ["persistent_sadness", "loss_of_interest", "fatigue", "sleep_problems"],
-        secondarySymptoms: ["difficulty_concentrating", "weight_changes", "feelings_of_guilt", "thoughts_of_death"],
-        weight: 0.7
-      },
-      "Asthma": {
-        primarySymptoms: ["wheezing", "shortness_of_breath", "chest_tightness", "coughing"],
-        secondarySymptoms: ["difficulty_sleeping", "fatigue", "anxiety", "rapid_breathing"],
-        weight: 0.75
-      },
-      "Hypothyroidism": {
-        primarySymptoms: ["fatigue", "weight_gain", "cold_sensitivity", "dry_skin"],
-        secondarySymptoms: ["constipation", "depression", "muscle_weakness", "joint_pain"],
-        weight: 0.72
-      },
-      "Hyperthyroidism": {
-        primarySymptoms: ["weight_loss", "rapid_heartbeat", "increased_appetite", "tremors"],
-        secondarySymptoms: ["fatigue", "anxiety", "heat_sensitivity", "sleep_problems"],
-        weight: 0.72
-      },
-      "Irritable Bowel Syndrome": {
-        primarySymptoms: ["abdominal_pain", "bloating", "constipation", "diarrhea"],
-        secondarySymptoms: ["gas", "mucus_in_stool", "fatigue", "food_intolerance"],
-        weight: 0.68
+      // Normalize score
+      if (symptomCount > 0) {
+        const coverage = profile.common_symptoms ?
+          symptomCount / profile.common_symptoms.length : 0;
+        const finalScore = score * (0.5 + 0.5 * coverage);
+        diseaseScores[disease] = finalScore;
+      } else {
+        diseaseScores[disease] = 0;
       }
-    };
+    });
 
-    // Calculate scores for each disease based on symptom matches
-    const diagnoses = [];
+    // Sort and return as array of [disease, score] pairs
+    return Object.entries(diseaseScores)
+      .sort((a, b) => b[1] - a[1]);
+  };
 
-    Object.entries(diseaseSymptomMap).forEach(([disease, data]) => {
-      const { primarySymptoms, secondarySymptoms, weight } = data;
+  const generateFollowUpQuestions = (topDiseases) => {
+    if (!diagnosticData) return [];
 
-      // Count matching symptoms
-      const matchingPrimary = primarySymptoms.filter(s => yesSymptoms.includes(s));
-      const matchingSecondary = secondarySymptoms.filter(s => yesSymptoms.includes(s));
+    const potentialQuestions = new Set();
+    const askedSymptoms = new Set([
+      ...reportedSymptoms,
+      ...deniedSymptoms,
+      ...uncertainSymptoms
+    ]);
 
-      // Count conflicting symptoms (symptoms explicitly denied)
-      const conflictingPrimary = primarySymptoms.filter(s => noSymptoms.includes(s));
+    topDiseases.forEach(disease => {
+      const profile = diagnosticData.disease_symptom_profiles[disease];
 
-      // Calculate score based on matches and conflicts
-      // Primary symptoms have higher weight than secondary symptoms
-      const primaryScore = matchingPrimary.length / primarySymptoms.length;
-      const secondaryScore = matchingSecondary.length / secondarySymptoms.length;
-
-      // Penalize for conflicting primary symptoms
-      const conflictPenalty = conflictingPrimary.length * 0.2;
-
-      // Weighted score calculation
-      let finalScore = (primaryScore * 0.7 + secondaryScore * 0.3) * weight;
-      finalScore = Math.max(0, finalScore - conflictPenalty); // Apply penalty but don't go below 0
-
-      // Only consider diseases with some evidence
-      if (matchingPrimary.length > 0 || matchingSecondary.length > 0) {
-        diagnoses.push({
-          disease,
-          probability: finalScore,
-          matchingSymptoms: [...matchingPrimary, ...matchingSecondary]
+      if (profile && profile.common_symptoms) {
+        profile.common_symptoms.forEach(symptom => {
+          if (!askedSymptoms.has(symptom)) {
+            potentialQuestions.add(symptom);
+          }
         });
       }
     });
 
-    // Sort diagnoses by probability
-    const sortedDiagnoses = diagnoses.sort((a, b) => b.probability - a.probability);
+    // Score questions by diagnostic value
+    const questionScores = {};
+    potentialQuestions.forEach(symptom => {
+      let score = 0;
 
-    // If we have valid diagnoses, return them
-    if (sortedDiagnoses.length > 0) {
-      // Normalize probabilities to be between 0 and 1
-      const maxProb = Math.max(...sortedDiagnoses.map(d => d.probability));
-      const normalizedDiagnoses = sortedDiagnoses.map(d => ({
-        ...d,
-        probability: Math.min(0.95, (d.probability / maxProb) * 0.9)
-      }));
+      topDiseases.forEach(disease => {
+        const profile = diagnosticData.disease_symptom_profiles[disease];
+        if (profile &&
+            profile.common_symptoms &&
+            profile.common_symptoms.includes(symptom) &&
+            profile.symptom_prevalence) {
+          score += profile.symptom_prevalence[symptom] || 0;
+        }
+      });
 
-      setDiagnosis(normalizedDiagnoses);
-    } else {
-      // If no matches found, provide more specific feedback based on symptoms
-      let fallbackDiagnoses = [];
+      questionScores[symptom] = score;
+    });
 
-      if (yesSymptoms.length === 0) {
-        fallbackDiagnoses.push({ disease: "Healthy", probability: 0.9 });
-      } else if (yesSymptoms.some(s => s.includes("pain") || s.includes("ache"))) {
-        fallbackDiagnoses.push({ disease: "Pain Disorder", probability: 0.4 });
-      } else if (yesSymptoms.some(s => s.includes("cough") || s.includes("throat") || s.includes("congestion"))) {
-        fallbackDiagnoses.push({ disease: "Upper Respiratory Condition", probability: 0.45 });
-      } else if (yesSymptoms.some(s => s.includes("stomach") || s.includes("nausea") || s.includes("vomit"))) {
-        fallbackDiagnoses.push({ disease: "Digestive Disorder", probability: 0.42 });
+    // Sort and return symptoms with highest diagnostic value
+    const sortedQuestions = Object.entries(questionScores)
+      .sort((a, b) => b[1] - a[1])
+      .map(([symptom]) => symptom);
+
+    // Limit to max 7 follow-up questions to prevent fatigue
+    return sortedQuestions.slice(0, 7);
+  };
+
+  const analyzeResults = () => {
+    const diseaseScores = calculateDiseaseScores();
+    const topDiseases = diseaseScores.slice(0, 3);
+
+    // Handle empty results
+    if (topDiseases.length === 0) {
+      return {
+        primary_diagnosis: "Unknown",
+        score: 0,
+        confidence_level: "low",
+        reported_symptoms: [...reportedSymptoms],
+        differential_diagnoses: [],
+        recommendation: "Not enough information to make a diagnosis. Please consult a healthcare professional."
+      };
+    }
+
+    const [primaryDisease, primaryScore] = topDiseases[0];
+
+    // Calculate confidence level
+    let confidenceLevel = "low";
+    if (topDiseases.length > 1) {
+      const scoreRatio = topDiseases[1][1] > 0 ?
+        primaryScore / topDiseases[1][1] : 2.0;
+
+      if (scoreRatio > 1.5) {
+        confidenceLevel = primaryScore > 2.0 ? "high" : "medium";
       } else {
-        fallbackDiagnoses.push({ disease: "Unspecified Condition", probability: 0.3 });
+        confidenceLevel = primaryScore > 1.5 ? "medium" : "low";
       }
-
-      // Add note about insufficient information
-      fallbackDiagnoses[0].insufficientData = true;
-
-      setDiagnosis(fallbackDiagnoses);
-    }
-
-    setShowingDiagnosis(true);
-  };
-
-  // Process the user's answer
-  const processAnswer = (hasSymptom) => {
-    if (!currentQuestion || !metadata) return;
-
-    const symptomIdx = metadata.symptomNames.indexOf(currentQuestion);
-    if (symptomIdx === -1) {
-      console.error(`Symptom '${currentQuestion}' not found in the list.`);
-      return;
-    }
-
-    // Update symptoms array
-    const updatedSymptoms = [...currentSymptoms];
-    updatedSymptoms[symptomIdx] = hasSymptom ? 1 : 0;
-    setCurrentSymptoms(updatedSymptoms);
-
-    // Update tracking lists
-    if (hasSymptom) {
-      setYesSymptoms([...yesSymptoms, currentQuestion]);
     } else {
-      setNoSymptoms([...noSymptoms, currentQuestion]);
+      confidenceLevel = primaryScore > 1.0 ? "medium" : "low";
     }
 
-    // Update asked symptoms set
-    const updatedAsked = new Set(askedSymptoms);
-    updatedAsked.add(currentQuestion);
-    setAskedSymptoms(updatedAsked);
+    // Check symptom coverage for primary disease
+    const profile = diagnosticData.disease_symptom_profiles[primaryDisease];
+    if (profile && profile.common_symptoms) {
+      const keySymptoms = new Set(profile.common_symptoms.slice(0, 5));
+      const reportedKeySymptoms = [...reportedSymptoms].filter(s => keySymptoms.has(s));
 
-    // Increment question counter
-    const newCount = questionCount + 1;
-    setQuestionCount(newCount);
-
-    // Ask next question
-    askNextQuestion(symptomPools, updatedAsked, newCount);
-  };
-
-  // Reset the game
-  const resetGame = () => {
-    if (!metadata) return;
-
-    setAskedSymptoms(new Set());
-    setCurrentSymptoms(new Array(metadata.symptomNames.length).fill(0));
-    setYesSymptoms([]);
-    setNoSymptoms([]);
-    setQuestionCount(0);
-    setCurrentQuestion(null);
-    setDiagnosis([]);
-    setGameOver(false);
-    setShowingDiagnosis(false);
-
-    // Ask the first question
-    if (symptomPools) {
-      askNextQuestion(symptomPools, new Set(), 0);
+      if (reportedKeySymptoms.length >= 3 && primaryScore > 2.0) {
+        confidenceLevel = "high";
+      } else if (reportedKeySymptoms.length <= 1 && confidenceLevel === "high") {
+        confidenceLevel = "medium";
+      }
     }
+
+    // Prepare differential diagnoses
+    const differentials = topDiseases.slice(1).map(([disease, score]) => {
+      const ratio = primaryScore > 0 ? score / primaryScore : 0;
+      const considerationLevel = ratio > 0.8 ? "strong" :
+                              ratio > 0.5 ? "moderate" : "mild";
+
+      // Find unique symptoms for this differential
+      const profile = diagnosticData.disease_symptom_profiles[disease];
+      const uniqueSymptoms = profile && profile.common_symptoms ?
+        profile.common_symptoms
+          .slice(0, 5)
+          .filter(s => !reportedSymptoms.has(s) && !deniedSymptoms.has(s))
+          .slice(0, 3) : [];
+
+      return {
+        disease,
+        score,
+        consideration_level: considerationLevel,
+        distinguishing_symptoms: uniqueSymptoms
+      };
+    });
+
+    // Prepare recommendation
+    let recommendation = "";
+    if (confidenceLevel === "high") {
+      recommendation = "This diagnosis matches your symptoms strongly. However, please consult a healthcare professional for confirmation.";
+    } else if (confidenceLevel === "medium") {
+      recommendation = "Your symptoms suggest this condition, but other conditions should be considered. Please consult a healthcare professional.";
+    } else {
+      recommendation = "Your symptoms don't strongly match any single condition. Medical consultation is strongly recommended.";
+    }
+
+    return {
+      primary_diagnosis: primaryDisease,
+      score: primaryScore,
+      confidence_level: confidenceLevel,
+      reported_symptoms: [...reportedSymptoms],
+      differential_diagnoses: differentials,
+      recommendation
+    };
   };
 
-  // Finish game early and show diagnosis
-  const finishGame = () => {
-    setGameOver(true);
-    getDiagnosisWithoutInference();
+  const restartDiagnostic = () => {
+    setCurrentPhase('welcome');
+    setCurrentSymptomIndex(0);
+    setReportedSymptoms(new Set());
+    setDeniedSymptoms(new Set());
+    setUncertainSymptoms(new Set());
+    setTopCandidates([]);
+    setDiagnosticResults(null);
+    setShowFeedback(false);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-4">Loading Medinator...</h1>
-          <div className="animate-pulse bg-blue-200 h-2 w-full rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  // Current symptom being asked
+  const currentSymptom = currentPhase === 'initial'
+    ? initialSymptoms[currentSymptomIndex]
+    : currentPhase === 'followup'
+      ? followUpSymptoms[currentSymptomIndex]
+      : null;
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Model</h1>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">MEDINATOR</h1>
-
-        {isModelLoaded ? (
-          <>
-            {!gameOver && !showingDiagnosis && currentQuestion && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-4">Question {questionCount + 1}</h2>
-                <p className="text-lg mb-6">Does the patient have: <span className="font-bold">{currentQuestion}</span>?</p>
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={() => processAnswer(true)}
-                    className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => processAnswer(false)}
-                    className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    No
-                  </button>
-                </div>
-
-                {/* Show Finish button after MIN_QUESTIONS */}
-                {questionCount >= MIN_QUESTIONS && (
-                  <div className="text-center mt-6">
-                    <button
-                      onClick={finishGame}
-                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                      Finish and Get Diagnosis
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {showingDiagnosis && (
-  <div className="mb-8 border-t pt-6">
-    <h2 className="text-xl font-semibold mb-4 text-center">
-      {gameOver ? "Final Diagnosis" : "Current Possibilities"}
-    </h2>
-
-    {diagnosis.length > 0 ? (
-      <div>
-        <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-medium mb-2">Most likely diagnosis:</h3>
-          <p className="text-xl font-bold text-blue-600">
-            {diagnosis[0].disease}
-          </p>
-          <p className="text-gray-700">
-            Confidence: {(diagnosis[0].probability * 100).toFixed(1)}%
-          </p>
-
-          {diagnosis[0].insufficientData && (
-            <p className="text-amber-600 mt-2 text-sm">
-              Note: More information needed for a more accurate diagnosis.
-            </p>
-          )}
-
-          {diagnosis[0].matchingSymptoms && (
-            <div className="mt-2 text-sm">
-              <p className="font-medium">Matching symptoms:</p>
-              <p>{diagnosis[0].matchingSymptoms.join(", ")}</p>
-            </div>
-          )}
-        </div>
-
-        {diagnosis.length > 1 && (
-          <div className="mb-6">
-            <h3 className="font-medium mb-2">Other possibilities:</h3>
-            <ul className="list-disc pl-5">
-              {diagnosis.slice(1, 4).map((result, idx) => (
-                <li key={idx} className="mb-2">
-                  <div className="font-medium">{result.disease}: {(result.probability * 100).toFixed(1)}%</div>
-                  {result.matchingSymptoms && (
-                    <div className="text-sm text-gray-600">
-                      Matching: {result.matchingSymptoms.join(", ")}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    ) : (
-      <p className="text-center text-gray-700">
-        Not enough information to make a diagnosis.
-      </p>
-    )}
-
-    <div className="mt-4 border-t pt-4">
-      <h3 className="font-medium mb-2">Symptom Summary:</h3>
-      <div className="mb-2">
-        <p className="font-medium text-green-600">Confirmed symptoms:</p>
-        {yesSymptoms.length > 0 ? (
-          <p>{yesSymptoms.join(", ")}</p>
-        ) : (
-          <p className="text-gray-500 italic">None confirmed</p>
-        )}
-      </div>
-      <div>
-        <p className="font-medium text-red-600">Denied symptoms:</p>
-        {noSymptoms.length > 0 ? (
-          <p>{noSymptoms.join(", ")}</p>
-        ) : (
-          <p className="text-gray-500 italic">None denied</p>
-        )}
-      </div>
+  // UI Components
+  const LoadingScreen = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+      <RefreshCw className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+      <h2 className="text-xl font-bold mb-2">Loading Diagnostic System</h2>
+      <p className="text-gray-600">Please wait while we prepare the symptom checker...</p>
     </div>
+  );
 
-    <div className="flex justify-center mt-6">
-      {!gameOver && (
-        <button
-          onClick={() => setShowingDiagnosis(false)}
-          className="px-4 py-2 bg-blue-500 text-white rounded mr-3 hover:bg-blue-600"
-        >
-          Continue Questions
-        </button>
-      )}
+  const ErrorScreen = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-red-50">
+      <AlertCircle className="w-10 h-10 text-red-500 mb-4" />
+      <h2 className="text-xl font-bold mb-2">Error Loading Data</h2>
+      <p className="text-gray-700 mb-4">{error}</p>
       <button
-        onClick={resetGame}
-        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow"
+        onClick={() => window.location.reload()}
       >
-        Start Over
+        Retry
       </button>
     </div>
-  </div>
-)}
+  );
 
-            <div className="text-center text-sm text-gray-500 mt-8">
-              <p>Questions asked: {questionCount} | Symptoms confirmed: {yesSymptoms.length}</p>
-              <p className="mt-4">
-                Disclaimer: This is a simulation and not a substitute for professional medical advice.
-              </p>
+  const WelcomeScreen = () => (
+    <div className="flex flex-col items-center justify-center p-6 max-w-lg mx-auto text-center">
+      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+        <FileText className="w-8 h-8 text-blue-500" />
+      </div>
+
+      <h1 className="text-2xl font-bold mb-4">Healthcare Symptom Checker</h1>
+      <p className="text-gray-600 mb-6">
+        Answer a series of questions about your symptoms to get a preliminary assessment.
+        This tool is for informational purposes only and does not replace medical advice.
+      </p>
+
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left w-full">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <AlertCircle className="h-5 w-5 text-yellow-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-yellow-700">
+              This is not a medical diagnosis. Always consult with a qualified healthcare provider.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => setCurrentPhase('initial')}
+        className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg shadow flex items-center justify-center w-full sm:w-auto"
+      >
+        Begin Assessment <ChevronRight className="ml-2 w-4 h-4" />
+      </button>
+    </div>
+  );
+
+  const QuestionScreen = () => {
+    const progress = currentPhase === 'initial'
+      ? (currentSymptomIndex + 1) / initialSymptoms.length
+      : (currentSymptomIndex + 1) / followUpSymptoms.length;
+
+    const phaseTitle = currentPhase === 'initial'
+      ? 'Initial Assessment'
+      : 'Follow-up Questions';
+
+    return (
+      <div className="p-6 max-w-lg mx-auto">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold mb-2">{phaseTitle}</h2>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div
+              className="bg-blue-500 h-2.5 rounded-full"
+              style={{ width: `${progress * 100}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Question {currentSymptomIndex + 1} of {
+              currentPhase === 'initial' ? initialSymptoms.length : followUpSymptoms.length
+            }
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-lg font-medium mb-6">
+            Do you have <span className="text-blue-600 font-semibold">{currentSymptom}</span>?
+          </h3>
+
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => processResponse(currentSymptom, "yes")}
+              className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors"
+            >
+              <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
+              <span className="font-medium">Yes</span>
+            </button>
+
+            <button
+              onClick={() => processResponse(currentSymptom, "no")}
+              className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+            >
+              <X className="w-8 h-8 text-red-500 mb-2" />
+              <span className="font-medium">No</span>
+            </button>
+
+            <button
+              onClick={() => processResponse(currentSymptom, "unsure")}
+              className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-colors"
+            >
+              <HelpCircle className="w-8 h-8 text-yellow-500 mb-2" />
+              <span className="font-medium">Unsure</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-500">
+          {currentPhase === 'initial'
+            ? 'These questions help us narrow down potential conditions.'
+            : 'These follow-up questions help refine our assessment.'}
+        </p>
+      </div>
+    );
+  };
+
+  const ResultsScreen = () => {
+    if (!diagnosticResults) return null;
+
+    const getConfidenceColor = (level) => {
+      switch (level) {
+        case 'high': return 'text-green-600';
+        case 'medium': return 'text-yellow-600';
+        case 'low': return 'text-red-600';
+        default: return 'text-gray-600';
+      }
+    };
+
+    const getConsiderationColor = (level) => {
+      switch (level) {
+        case 'strong': return 'text-yellow-600';
+        case 'moderate': return 'text-blue-600';
+        case 'mild': return 'text-gray-600';
+        default: return 'text-gray-600';
+      }
+    };
+
+    return (
+      <div className="p-6 max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-2">Assessment Results</h2>
+          <p className="text-gray-600">Based on the symptoms you reported</p>
+        </div>
+
+        {/* Primary Diagnosis */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-xl font-semibold mb-4">
+            Primary Assessment
+          </h3>
+
+          <div className="flex items-center mb-4">
+            <div className="text-xl font-bold">{diagnosticResults.primary_diagnosis}</div>
+            <div className={`ml-4 px-3 py-1 rounded-full text-sm font-medium ${
+              getConfidenceColor(diagnosticResults.confidence_level) === 'text-green-600' ? 'bg-green-100' :
+              getConfidenceColor(diagnosticResults.confidence_level) === 'text-yellow-600' ? 'bg-yellow-100' :
+              'bg-red-100'
+            }`}>
+              <span className={getConfidenceColor(diagnosticResults.confidence_level)}>
+                {diagnosticResults.confidence_level.toUpperCase()} CONFIDENCE
+              </span>
             </div>
-          </>
+          </div>
+
+          <div className="mb-4">
+            <h4 className="font-medium text-gray-700 mb-2">Matched Symptoms:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {diagnosticResults.reported_symptoms.slice(0, 6).map((symptom, index) => (
+                <div key={index} className="flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                  <span>{symptom}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+            <p className="text-blue-800">{diagnosticResults.recommendation}</p>
+          </div>
+        </div>
+
+        {/* Differential Diagnoses */}
+        {diagnosticResults.differential_diagnoses.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">
+              Alternative Possibilities to Consider
+            </h3>
+
+            <div className="space-y-4">
+              {diagnosticResults.differential_diagnoses.map((diff, index) => (
+                <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center mb-2">
+                    <h4 className="font-medium">{diff.disease}</h4>
+                    <span className={`ml-2 text-sm ${getConsiderationColor(diff.consideration_level)}`}>
+                      ({diff.consideration_level} consideration)
+                    </span>
+                  </div>
+
+                  {diff.distinguishing_symptoms.length > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Additional symptoms to ask about:</p>
+                      <ul className="pl-5 list-disc text-sm text-gray-700">
+                        {diff.distinguishing_symptoms.map((symptom, i) => (
+                          <li key={i}>{symptom}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Disclaimer */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-red-800 font-medium mb-1">IMPORTANT DISCLAIMER</p>
+          <p className="text-sm text-red-700">
+            This assessment is for informational purposes only and does not constitute medical advice,
+            diagnosis, or treatment. Always seek the advice of your physician or other qualified health
+            provider with any questions regarding a medical condition.
+          </p>
+        </div>
+
+        {/* Actions */}
+        {!showFeedback ? (
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg"
+            >
+              Was this helpful?
+            </button>
+
+            <button
+              onClick={restartDiagnostic}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow flex items-center justify-center"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" /> Start New Assessment
+            </button>
+          </div>
         ) : (
-          <div className="text-center">
-            <p>Failed to load Medinator model. Please try again.</p>
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="mb-3 text-gray-700">Was this assessment helpful?</p>
+            <div className="flex gap-4">
+              <button
+                className="flex items-center px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg"
+                onClick={() => {
+                  alert("Thank you for your feedback! We're glad this was helpful.");
+                  setShowFeedback(false);
+                }}
+              >
+                <ThumbsUp className="w-4 h-4 mr-2" /> Yes, it was helpful
+              </button>
+
+              <button
+                className="flex items-center px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg"
+                onClick={() => {
+                  alert("Thank you for your feedback. We'll work to improve our system.");
+                  setShowFeedback(false);
+                }}
+              >
+                <ThumbsDown className="w-4 h-4 mr-2" /> No, not helpful
+              </button>
+            </div>
           </div>
         )}
       </div>
+    );
+  };
+
+  // Main render
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen />;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex justify-between items-center">
+          <h1 className="text-lg font-bold text-blue-600">Healthcare Symptom Checker</h1>
+          {currentPhase !== 'welcome' && (
+            <button
+              onClick={restartDiagnostic}
+              className="text-sm text-gray-600 hover:text-gray-900 flex items-center"
+            >
+              <RefreshCw className="w-4 h-4 mr-1" /> Restart
+            </button>
+          )}
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {currentPhase === 'welcome' && <WelcomeScreen />}
+        {(currentPhase === 'initial' || currentPhase === 'followup') && <QuestionScreen />}
+        {currentPhase === 'results' && <ResultsScreen />}
+      </main>
+
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm text-gray-500">
+          <p>© 2025 Healthcare Symptom Checker - For educational purposes only</p>
+        </div>
+      </footer>
     </div>
   );
 }
