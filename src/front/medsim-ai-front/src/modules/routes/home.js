@@ -6,6 +6,212 @@ import "../../styles/blob.css";
 import Chatbot from "../components/chatbot";
 import Sidebar from "../components/sidebar";
 import BarGraph from "../components/bargraph";
+import { HelpCircle, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+
+const PerformanceMetricsCard = ({ averageMetrics }) => {
+  const getColorForMetric = (key) => {
+    const colors = {
+      accuracy: "bg-blue-500",
+      precision: "bg-green-500",
+      recall: "bg-yellow-500",
+      f1_score: "bg-purple-500",
+    };
+    return colors[key.toLowerCase()] || "bg-gray-500";
+  };
+
+  const getTextColorForMetric = (key) => {
+    const colors = {
+      accuracy: "text-blue-600",
+      precision: "text-green-600",
+      recall: "text-yellow-600",
+      f1_score: "text-purple-600",
+    };
+    return colors[key.toLowerCase()] || "text-gray-800";
+  };
+
+  const filteredMetrics = Object.fromEntries(
+    Object.entries(averageMetrics).filter(([key]) => key !== "Correctly Diagnosed")
+  );
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden h-[28rem] w-full transition-all duration-300 ease-in-out transform flex">
+      {/* Left: Bar Graph */}
+      <div className="w-1/2 p-6 border-r border-gray-200 bg-gray-50 flex items-center justify-center">
+        <BarGraph
+          data={filteredMetrics}
+          bgColor="#ffffff"
+          axisColor="#4b5563"
+          gridColor="#e5e7eb"
+          textColor="#1f2937"
+          colors={[
+            "#3b82f6", "#10b981", "#ef4444",
+            "#8b5cf6", "#eab308", "#ec4899", "#6366f1"
+          ]}
+        />
+      </div>
+
+      {/* Right: Metrics Display */}
+      <div className="w-1/2 p-6 overflow-y-auto">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">Average Performance Metrics</h3>
+        <div className="space-y-4">
+          {Object.entries(averageMetrics).map(([key, value]) => {
+            if (key === "Correctly Diagnosed") {
+              return (
+                <div key={key} className="flex items-center justify-between text-sm font-medium text-gray-700">
+                  <span className="flex items-center">
+                    <span className="inline-block w-3 h-3 rounded-full bg-gray-500 mr-2"></span>
+                    {key.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-800 py-2">
+                    {value === 1 ? (
+                      <span className="bg-green-600 py-1 px-2 text-white rounded-xl border border-green-800">
+                        Mostly Correct
+                      </span>
+                    ) : (
+                      <span className="bg-red-600 py-1 px-2 text-white rounded-xl border border-red-800">
+                        Mostly Incorrect
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <div key={key} className="flex flex-col">
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700 flex items-center">
+                    <span className={`inline-block w-3 h-3 rounded-full ${getColorForMetric(key)} mr-2`}></span>
+                    {key.replace(/_/g, ' ')}
+                  </span>
+                  <span className={`text-sm font-semibold ${getTextColorForMetric(key)}`}>
+                    {value}/10
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`${getColorForMetric(key)} h-2 rounded-full`}
+                    style={{ width: `${value * 10}%` }}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const MedinatorCard = () => {
+  const navigate = useNavigate()
+  const [isHovering, setIsHovering] = useState(false);
+
+  return (
+    <div className="bg-black rounded-xl shadow-lg overflow-hidden p-0 h-96 w-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+      <div className="h-full flex flex-col items-center justify-between p-6 bg-gradient-to-br from-black via-gray-600/40 to-gray-900 transition-all duration-300 hover:from-black hover:to-gray-800">
+        {/* Logo and Title */}
+        <div className="text-center mb-3">
+          <p className="font-bold text-2xl text-white font-serif tracking-wider">Medinator</p>
+          {!isHovering ? (<p className="text-gray-400 italic text-sm">Answer questions. Find your condition.</p>):null}
+        </div>
+
+        {/* Interactive Diagnostic Icons */}
+        <div className="w-full flex-1 relative flex justify-center items-center overflow-hidden">
+          <div className="transform transition-all duration-500 hover:scale-105 group flex flex-col items-center">
+            <div className="flex space-x-6 mb-4">
+              <div className="flex flex-col items-center transition-all duration-300 transform group-hover:scale-105">
+                <CheckCircle size={32} className="text-green-400" />
+                <p className="text-green-400 mt-1 font-medium">Yes</p>
+              </div>
+              <div className="flex flex-col items-center transition-all duration-300 transform group-hover:scale-105">
+                <XCircle size={32} className="text-red-400" />
+                <p className="text-red-400 mt-1 font-medium">No</p>
+              </div>
+              <div className="flex flex-col items-center transition-all duration-300 transform group-hover:scale-105">
+                <AlertCircle size={32} className="text-yellow-400" />
+                <p className="text-yellow-400 mt-1 font-medium">Not Sure</p>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="bg-gray-800 bg-opacity-50 p-2 rounded-lg border border-gray-500">
+                <p className="text-white text-center">Do you experience headaches?</p>
+              </div>
+
+              {/* Animated diagnostic paths */}
+              <div className="absolute -top-1 -left-12 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="w-6 h-6 rounded-full bg-white animate-pulse-bright"></div>
+              </div>
+              <div className="absolute top-20 -right-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="w-4 h-4 rounded-full bg-gray-300 animate-pulse-bright delay-300"></div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-center">
+              <HelpCircle size={32} className="text-gray-300 animate-pulse-slow" />
+            </div>
+          </div>
+        </div>
+
+        {/* Marketing text that expands on hover */}
+        <div
+          className="mt-2 text-center overflow-hidden transition-all duration-500"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          {!isHovering && (
+            <p className="text-gray-300 text-sm">Simple yes/no questions lead to accurate diagnoses</p>
+          )}
+          {isHovering && (
+            <p className="relative text-gray-200 text-sm">
+              AI-powered question sequence analyzes your symptoms to identify potential medical conditions with precision.
+            </p>
+          )}
+          {/* Call to action */}
+          <button
+            className="mt-3 bg-white hover:bg-gray-200 text-black font-bold py-2 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+            onClick={() => {navigate("/symptomtree")}}
+          >
+            Start Diagnosis
+          </button>
+        </div>
+      </div>
+
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-bright {
+          0% { opacity: 0.4; transform: scale(0.95); }
+          50% { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 0.4; transform: scale(0.95); }
+        }
+        .animate-pulse-bright {
+          animation: pulse-bright 2s infinite;
+        }
+        @keyframes pulse-slow {
+          0% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.8; }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s infinite ease-in-out;
+        }
+        .group:hover .object-top {
+          object-position: center;
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const SymptomSimulatorCard = () => {
   const navigate = useNavigate()
@@ -419,14 +625,14 @@ const Homepage = () => {
     }
 
     return (
-        <div className="relative min-h-screen bg-gray-100 pb-16 overflow-x-hidden">
+        <div className="relative min-h-screen bg-gray-100 pb-2 overflow-x-hidden">
           {/* Main content area */}
                       <div className="px-4 py-4">
                           {/* Welcome Card */}
-                          <div className="bg-gray-900 rounded-xl shadow-md overflow-hidden p-6 mx-0 w-full mb-6">
+                          <div className="bg-gray-900 rounded-xl shadow-md overflow-hidden p-6 mx-0 w-full mb-10">
                               <div className="flex flex-row items-center">
                                   <div className="flex-1 min-w-0 pl-4 md:pl-8 lg:pl-12 xl:pl-16">
-                                      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                                      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-10 whitespace-nowrap overflow-hidden text-ellipsis">
                                           Welcome back, {username.username}!
                                       </h1>
                                       <hr className="border-t-4 border-white mt-3 w-20 rounded-full" />
@@ -441,108 +647,10 @@ const Homepage = () => {
                           </div>
 
                 {/* Three-card layout with hover animation */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
                     {/* Performance Averages Card (Left) */}
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden h-96 transition-all duration-300 ease-in-out transform md:hover:scale-102 md:hover:shadow-xl">
-                        {loadingMetrics ? (
-                            <div className="h-full flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                            </div>
-                        ) : (
-                            <div className="h-full flex flex-col">
-                                <div className="p-5 border-b border-gray-200">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="text-lg font-bold text-gray-800">Average Performance Metrics</h3>
-                                        <button
-                                            onClick={toggleMetricView}
-                                            className="text-sm font-medium text-blue-500 hover:text-blue-700 transition-colors duration-300 flex items-center"
-                                        >
-                                            {activeMetricView === 'text' ? (
-                                                <>
-                                                    <span>View Graph</span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                    </svg>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>View Details</span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                                    </svg>
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 overflow-hidden">
-                                  {activeMetricView === 'text' ? (
-                                      <div className="p-5 h-full overflow-y-auto">
-                                          <div className="space-y-4">
-                                              {Object.entries(averageMetrics).map(([key, value]) => {
-                                                  if (key === "Correctly Diagnosed") {
-                                                      return (
-                                                          <div key={key} className="flex justify-between items-center text-sm font-medium text-gray-700">
-                                                              <span className="flex items-center">
-                                                                  <span className="inline-block w-3 h-3 rounded-full bg-gray-500 mr-2"></span>
-                                                                  {key.replace(/_/g, ' ')}
-                                                              </span>
-                                                              <span className="text-sm font-semibold text-gray-800 py-2">
-                                                                  {value === 1 ? <p className="bg-green-600 py-1 px-2 text-white rounded-xl border-[1px] border-green-800">Mostly Correctly Diagnosed</p> : <p className="bg-red-600 py-1 px-2 text-white rounded-xl border-[1px] border-red-800">Mostly Incorrectly Diagnosed</p>}
-                                                              </span>
-                                                          </div>
-                                                      );
-                                                  }
-
-                                                  return (
-                                                      <div key={key} className="flex flex-col">
-                                                          <div className="flex justify-between items-center mb-1">
-                                                              <span className="text-sm font-medium text-gray-700 flex items-center">
-                                                                  <span className={`inline-block w-3 h-3 rounded-full ${getColorForMetric(key)} mr-2`}></span>
-                                                                  {key.replace(/_/g, ' ')}
-                                                              </span>
-                                                              <span className={`text-sm font-semibold ${getTextColorForMetric(key)}`}>
-                                                                  {value}/10
-                                                              </span>
-                                                          </div>
-                                                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                              <div
-                                                                  className={`${getColorForMetric(key).replace('bg-', 'bg-')} h-2 rounded-full`}
-                                                                  style={{ width: `${value * 10}%` }}
-                                                              ></div>
-                                                          </div>
-                                                      </div>
-                                                  );
-                                              })}
-                                          </div>
-                                      </div>
-                                  ) : (
-                                      <div className="p-2 h-full flex flex-col">
-                                          <div className="flex-1">
-                                              <BarGraph
-                                                  data={Object.fromEntries(Object.entries(averageMetrics).filter(([key]) => key !== "Correctly Diagnosed"))}
-                                                  bgColor="#ffffff"
-                                                  axisColor="#4b5563"
-                                                  gridColor="#e5e7eb"
-                                                  textColor="#1f2937"
-                                                  colors={[
-                                                      '#3b82f6', // blue-500
-                                                      '#10b981', // emerald-500
-                                                      '#ef4444', // red-500
-                                                      '#8b5cf6', // violet-500
-                                                      '#eab308', // yellow-500
-                                                      '#ec4899', // pink-500
-                                                      '#6366f1'  // indigo-500
-                                                  ]}
-                                              />
-                                          </div>
-                                      </div>
-                                  )}
-
-                                </div>
-                            </div>
-                        )}
+                        < MedinatorCard/>
                     </div>
 
                     {/* Middle Card */}
@@ -559,6 +667,10 @@ const Homepage = () => {
                         </div>
                     </div>
                 </div>
+          {/* Bottom card */}
+          <div className=" py-4 mb-10">
+            <PerformanceMetricsCard averageMetrics={averageMetrics}/>
+          </div>
             </div>
 
             {/* Sidebar */}
@@ -567,25 +679,6 @@ const Homepage = () => {
                     <Sidebar username={username.username} name={username.email} />
                 </div>
             )}
-
-            {/* Footer */}
-                       <footer className="fixed bottom-10 left-0 w-full bg-white py-4 h-16 border-t border-gray-200 z-20">
-                           <div className="container mx-auto h-full flex justify-center items-center px-4">
-                               <div className="flex items-center">
-                                   <div className="flex flex-col items-center">
-                                       <div className="text-gray-700 text-xs mb-1">
-                                           © Copyright 2025 MedSim-AI25
-                                       </div>
-                                       <div className="flex space-x-3">
-                                           <i className="fa-brands fa-twitter text-gray-600 hover:text-blue-400"></i>
-                                           <i className="fa-brands fa-facebook-f text-gray-600 hover:text-blue-600"></i>
-                                           <i className="fa-brands fa-instagram text-gray-600 hover:text-pink-500"></i>
-                                           <i className="fa-solid fa-envelope text-gray-600 hover:text-red-500"></i>
-                                       </div>
-                                   </div>
-                               </div>
-                           </div>
-                       </footer>
 
                        {/* Bottom Nav with Burger and Chatbot Button */}
                        <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white py-2 shadow-md flex justify-between items-center z-40">

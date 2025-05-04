@@ -35,7 +35,7 @@ const Sidebar = ({ username="?" , name="?" }) => {
       ];
 
     return (
-      <div className="fixed left-0 top-0 w-[250px] h-[95%] bg-gray-900 backdrop-blur-md shadow-lg flex flex-col justify-between text-white">
+      <div className="fixed left-0 top-0 w-[250px] h-[95%] bg-gray-900 backdrop-blur-md shadow-lg flex flex-col justify-between text-white z-40">
         {/* Top Section: User Info + Navigation Buttons */}
         <div className="flex flex-col gap-6 p-6">
            {/* Identicon Image (Centered) */}
