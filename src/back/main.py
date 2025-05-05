@@ -60,7 +60,7 @@ db_symptom_cache = SymptomCache(DB_PATH, DB_CACHE_LIMIT_UNIQUE)
 
 
 #load Intentclassifier
-#intent_classifier = IntentClassifier()
+intent_classifier = IntentClassifier()
 
 #initialise llm
 llm = LLM()
@@ -185,7 +185,7 @@ def auth_check():
 @jwt_required()
 def getusername():
     return get_username_from_jwt()
-"""
+
 @app.route("/intent", methods=["POST"])
 @jwt_required()
 def get_intent():
@@ -197,7 +197,6 @@ def get_intent():
     prediction = intent_classifier.get_intent(to_predict)       # Use instance method
     print(prediction)
     return {"intent": f'{prediction}'}                          # Return response as JSON
-"""
 
 @app.route('/get_identicon', methods=['GET'])
 @jwt_required()

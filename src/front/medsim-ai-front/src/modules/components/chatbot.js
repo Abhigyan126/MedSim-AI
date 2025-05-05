@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import API from "./api";
 import "../../styles/blob.css";
 import { useNavigate } from "react-router-dom";
-import { handleKeyDown } from "./handle_enter";
 
 
 const greetings = [
@@ -20,12 +19,12 @@ const greetings = [
 
 function DisplayGreetings() {
     const [greeting] = useState(() => {
-  
+
       const randomIndex = Math.floor(Math.random() * greetings.length);
       return greetings[randomIndex];
     });
-  
-  
+
+
     return <p className="text-lg text-white mt-10">{greeting}</p>;
   }
 
@@ -79,11 +78,17 @@ const Chatbot = ({ showChat, setShowChat }) => {
                 handle_ai_navigation('Signup', 'Permit', 'Forbid', 'login');
                 break;
             case 'profile':
-                ai_send('Redirecting to Profile page');
+                handle_ai_navigation('Profile', 'Permit', 'Forbid', 'profile');
                 break;
             case 'medsim':
-                ai_send('Redirecting to Medical simulator');
+                handle_ai_navigation('MedSim', 'Permit', 'Forbid', 'symptom-simulator');
                 break;
+          case 'disease_craft':
+            handle_ai_navigation('DiseaseCraft', 'Permit', 'Forbid', 'diseaseCraft');
+            break;
+          case 'medinator':
+            handle_ai_navigation('Medinator', 'Permit', 'Forbid', 'sympotmtree');
+            break;
             default:
                 console.log('Case not mapped in chatbot.js')
                 break
@@ -122,8 +127,8 @@ const Chatbot = ({ showChat, setShowChat }) => {
             </div>
 
             {/* Chat Body */}
-            <div className="flex-1 overflow-auto p-2 flex flex-col" 
-            style={{ maxHeight: "calc(100% - 80px)", paddingBottom: "60px" }} 
+            <div className="flex-1 overflow-auto p-2 flex flex-col"
+            style={{ maxHeight: "calc(100% - 80px)", paddingBottom: "60px" }}
             >
             {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
@@ -134,14 +139,14 @@ const Chatbot = ({ showChat, setShowChat }) => {
                     </div>
                 ) : (
                     messages.map((msg, index) => (
-                        <div 
-                            key={index} 
+                        <div
+                            key={index}
                             className={`max-w-[75%] px-2 py-1 my-1 rounded-lg break-words whitespace-pre-wrap text-sm ${
-                                msg.sender === "ai" 
+                                msg.sender === "ai"
                                     ? "bg-black self-start ml-2 mr-auto text-left bg-opacity-20 text-white"
                                     : "bg-white self-end mr-2 ml-auto text-right text-black"
                             }`}
-                        > 
+                        >
                             {msg.text}
                         </div>
                     ))
@@ -154,7 +159,6 @@ const Chatbot = ({ showChat, setShowChat }) => {
                         placeholder="Type a message..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, sendMessage)}
                         className="flex-1 p-1 h-8 border border-white bg-transparent text-white placeholder-white outline-none rounded-lg"
                     />
                     <button className="p-1 h-8" onClick={sendMessage}>
